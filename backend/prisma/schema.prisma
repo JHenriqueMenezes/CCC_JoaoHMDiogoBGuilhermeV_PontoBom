@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  nome      String?
+  telefone  String?  @unique
+  email     String?  @unique
+  senha     String?
+  role      Role     @default(CLIENTE)
+  ativo     Boolean  @default(true)
+  criadoEm DateTime @default(now())
+
+  pedidos Pedido[]
+  codigos CodigoVerificacao[]
+
+  @@map("usuarios")
+}
+
+enum Role {
+  ADMIN
+  CLIENTE
+}
+
+model CodigoVerificacao {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int
+  codigo    String
+  usado     Boolean  @default(false)
+  expiraEm  DateTime
+  criadoEm  DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("codigos_verificacao")
+}
+
+model Secao {
+  id        Int      @id @default(autoincrement())
+  nome      String   @unique
+  ativa     Boolean  @default(true)
+  ordem     Int      @default(0)
+  criadoEm DateTime @default(now())
+
+  itens ItemSecao[]
+
+  @@map("secoes")
+}
+
+model Item {
+  id           Int      @id @default(autoincrement())
+  nome         String
+  descricao    String?
+  preco        Decimal  @db.Decimal(10, 2)
+  disponivel   Boolean  @default(true)
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  secoes      ItemSecao[]
+  itensPedido ItemPedido[]
+
+  @@map("itens")
+}
+
+model ItemSecao {
+  itemId  Int
+  secaoId Int
+
+  item  Item  @relation(fields: [itemId], references: [id])
+  secao Secao @relation(fields: [secaoId], references: [id])
+
+  @@id([itemId, secaoId])
+  @@map("itens_secoes")
+}
+
+model Pedido {
+  id             Int            @id @default(autoincrement())
+  numero         String         @unique
+  usuarioId      Int
+  formaPagamento FormaPagamento
+  statusAtual    StatusPedido   @default(RECEBIDO)
+  estimativaMin  Int?
+  total          Decimal        @db.Decimal(10, 2)
+  criadoEm      DateTime       @default(now())
+  atualizadoEm  DateTime       @updatedAt
+
+  usuario  Usuario          @relation(fields: [usuarioId], references: [id])
+  itens    ItemPedido[]
+  historico HistoricoStatus[]
+
+  @@map("pedidos")
+}
+
+enum FormaPagamento {
+  AVISTA
+  ASAAS
+}
+
+enum StatusPedido {
+  RECEBIDO
+  ACEITO
+  EM_PREPARO
+  PRONTO_PARA_RETIRADA
+  FINALIZADO
+  RECUSADO
+}
+
+model ItemPedido {
+  id         Int     @id @default(autoincrement())
+  pedidoId   Int
+  itemId     Int
+  quantidade Int     @default(1)
+  observacao String?
+  precoUnit  Decimal @db.Decimal(10, 2)
+
+  pedido Pedido @relation(fields: [pedidoId], references: [id])
+  item   Item   @relation(fields: [itemId], references: [id])
+
+  @@map("itens_pedido")
+}
+
+model HistoricoStatus {
+  id        Int          @id @default(autoincrement())
+  pedidoId  Int
+  status    StatusPedido
+  motivo    String?
+  criadoEm DateTime     @default(now())
+
+  pedido Pedido @relation(fields: [pedidoId], references: [id])
+
+  @@map("historico_status")
+}
