@@ -49,6 +49,7 @@ psql -U postgres -d pontobom -f backend/prisma/migrations/0001_init.sql
 ```
 
 Isso cria todas as tabelas e um admin padrão:
+
 - **E-mail:** `admin@pontobom.com`
 - **Senha:** `admin123`
 
@@ -80,16 +81,16 @@ Acesse: `http://localhost:5173`
 
 ## 📅 Cronograma
 
-| Semana | Datas | Entrega | Status |
-|--------|-------|---------|--------|
-| 1 | 14/04 a 20/04 | Configuração do ambiente e banco de dados | ✅ |
-| 2 | 21/04 a 27/04 | UC01 – Login e Cadastro | ⏳ |
-| 3 | 28/04 a 04/05 | UC02 – Cardápio Admin | ⏳ |
-| 4 | 05/05 a 11/05 | UC03/04 – Cardápio + Carrinho | ⏳ |
-| 5 | 12/05 a 18/05 | UC04 – Pagamento + Asaas | ⏳ |
-| 6 | 19/05 a 25/05 | UC05 – Gerenciar Pedidos | ⏳ |
-| 7 | 26/05 a 01/06 | UC06 – Acompanhamento | ⏳ |
-| 8 | 02/06 a 08/06 | Testes e validação | ⏳ |
+| Semana | Datas         | Entrega                                   | Status |
+| ------ | ------------- | ----------------------------------------- | ------ |
+| 1      | 14/04 a 20/04 | Configuração do ambiente e banco de dados | ✅     |
+| 2      | 21/04 a 27/04 | UC01 – Login e Cadastro                   | ⏳     |
+| 3      | 28/04 a 04/05 | UC02 – Cardápio Admin                     | ⏳     |
+| 4      | 05/05 a 11/05 | UC03/04 – Cardápio + Carrinho             | ⏳     |
+| 5      | 12/05 a 18/05 | UC04 – Pagamento + Asaas                  | ⏳     |
+| 6      | 19/05 a 25/05 | UC05 – Gerenciar Pedidos                  | ⏳     |
+| 7      | 26/05 a 01/06 | UC06 – Acompanhamento                     | ⏳     |
+| 8      | 02/06 a 08/06 | Testes e validação                        | ⏳     |
 
 ---
 
@@ -97,6 +98,6 @@ Acesse: `http://localhost:5173`
 
 - Diogo Brollo
 - Guilherme Vieira
-- João Henrique Menezes
+- João Henrique Menezes de Souza
 
 **Universidade de Passo Fundo — UPF, 2026**
