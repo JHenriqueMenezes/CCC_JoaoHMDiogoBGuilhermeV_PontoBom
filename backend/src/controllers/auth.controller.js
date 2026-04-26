@@ -120,4 +120,37 @@ async function loginAdmin(req, res) {
   res.json({ token, usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, role: usuario.role } });
 }
 
-module.exports = { cadastrar, verificar, loginAdmin };
+// POST /auth/login - Login de cliente existente via WhatsApp
+async function loginCliente(req, res) {
+  const { telefone } = req.body;
+
+  if (!telefone) {
+    return res.status(400).json({ erro: 'Telefone é obrigatório.' });
+  }
+
+  const usuario = await prisma.usuario.findUnique({ where: { telefone } });
+
+  if (!usuario) {
+    return res.status(404).json({ erro: 'Nenhuma conta encontrada com esse número. Faça o cadastro primeiro.' });
+  }
+
+  const codigo = gerarCodigo();
+  await prisma.codigoVerificacao.create({
+    data: {
+      usuarioId: usuario.id,
+      codigo,
+      expiraEm: gerarExpiracao(),
+    },
+  });
+
+  try {
+    await whatsapp.enviarCodigoVerificacao(telefone, codigo);
+  } catch (err) {
+    console.warn(`⚠️  WhatsApp falhou para ${telefone}. Código: ${codigo}`);
+    console.warn(err.message);
+  }
+
+  res.json({ mensagem: 'Código enviado via WhatsApp.', telefone });
+}
+
+module.exports = { cadastrar, verificar, loginAdmin, loginCliente };
