@@ -84,7 +84,7 @@ Acesse: `http://localhost:5173`
 | Semana | Datas         | Entrega                                   | Status |
 | ------ | ------------- | ----------------------------------------- | ------ |
 | 1      | 14/04 a 20/04 | Configuração do ambiente e banco de dados | ✅     |
-| 2      | 21/04 a 27/04 | UC01 – Login e Cadastro                   | ⏳     |
+| 2      | 21/04 a 27/04 | UC01 – Login e Cadastro                   | ✅     |
 | 3      | 28/04 a 04/05 | UC02 – Cardápio Admin                     | ⏳     |
 | 4      | 05/05 a 11/05 | UC03/04 – Cardápio + Carrinho             | ⏳     |
 | 5      | 12/05 a 18/05 | UC04 – Pagamento + Asaas                  | ⏳     |
