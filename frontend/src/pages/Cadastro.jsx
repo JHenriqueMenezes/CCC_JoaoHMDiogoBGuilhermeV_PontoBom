@@ -36,6 +36,7 @@ export default function Cadastro() {
             placeholder="Seu nome"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
+            required
           />
           <label>Telefone (WhatsApp)</label>
           <input
