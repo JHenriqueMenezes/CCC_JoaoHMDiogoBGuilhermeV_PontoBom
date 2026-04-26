@@ -98,6 +98,6 @@ Acesse: `http://localhost:5173`
 
 - Diogo Brollo
 - Guilherme Vieira
-- João Henrique Menezes de Souza
+- João Henrique Menezes
 
 **Universidade de Passo Fundo — UPF, 2026**
