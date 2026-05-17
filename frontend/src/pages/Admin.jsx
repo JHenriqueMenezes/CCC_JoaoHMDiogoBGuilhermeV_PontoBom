@@ -601,7 +601,7 @@ export default function Admin() {
               <div key={item.id} className="adm-mobile-item-row">
                 <div className="adm-mobile-item-info">
                   <p style={{ fontWeight: 600, color: 'var(--pb-ink-900)' }}>{item.nome}</p>
-                  {item.descricao && <p style={{ fontSize: '12px', color: 'var(--pb-ink-500)', marginTop: '2px' }}>{item.descricao}</p>}
+                  {item.descricao && <p style={{ fontSize: '12px', color: 'var(--pb-ink-500)', marginTop: '2px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.descricao}</p>}
                   <p style={{ fontFamily: 'var(--pb-font-display)', fontWeight: 700, color: 'var(--pb-terracotta-600)', marginTop: '6px' }}>{fmt(item.preco)}</p>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>

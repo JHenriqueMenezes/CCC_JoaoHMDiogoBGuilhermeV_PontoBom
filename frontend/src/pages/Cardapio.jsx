@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -83,6 +83,7 @@ export default function Cardapio() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
   const [itemModal, setItemModal] = useState(null);
+  const scrollandoRef = useRef(false);
 
   const { adicionar, totalItens } = useCart();
   const { usuario, logout } = useAuth();
@@ -100,14 +101,49 @@ export default function Cardapio() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Atualiza o pill ativo conforme o usuário rola a página
+  useEffect(() => {
+    if (secoes.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (scrollandoRef.current) return;
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = Number(entry.target.id.replace('secao-', ''));
+            setSecaoAtiva(id);
+          }
+        });
+      },
+      { rootMargin: '-80px 0px -60% 0px', threshold: 0 }
+    );
+
+    secoes.forEach((s) => {
+      const el = document.getElementById(`secao-${s.id}`);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [secoes]);
+
   function handleLogout() { logout(); navigate('/login'); }
 
-  const secoesVisiveis = secaoAtiva ? secoes.filter((s) => s.id === secaoAtiva) : secoes;
+  function scrollParaSecao(id) {
+    setSecaoAtiva(id);
+    const el = document.getElementById(`secao-${id}`);
+    if (!el) return;
+    scrollandoRef.current = true;
+    const offset = 90;
+    const top = el.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top, behavior: 'smooth' });
+    setTimeout(() => { scrollandoRef.current = false; }, 800);
+  }
+
   const secoesComBusca = busca.trim()
-    ? secoesVisiveis
+    ? secoes
         .map((s) => ({ ...s, itens: s.itens.filter((i) => i.nome.toLowerCase().includes(busca.toLowerCase())) }))
         .filter((s) => s.itens.length > 0)
-    : secoesVisiveis;
+    : secoes;
 
   return (
     <div className="cd-page">
@@ -241,7 +277,7 @@ export default function Cardapio() {
                 <button
                   key={s.id}
                   className={`cd-pill${secaoAtiva === s.id ? ' cd-pill--on' : ''}`}
-                  onClick={() => setSecaoAtiva(s.id)}
+                  onClick={() => scrollParaSecao(s.id)}
                 >
                   {s.nome}
                 </button>
@@ -254,7 +290,7 @@ export default function Cardapio() {
                 <button
                   key={s.id}
                   className={`cd-aba${secaoAtiva === s.id ? ' cd-aba--on' : ''}`}
-                  onClick={() => setSecaoAtiva(s.id)}
+                  onClick={() => scrollParaSecao(s.id)}
                 >
                   {s.nome}
                 </button>
@@ -262,7 +298,7 @@ export default function Cardapio() {
             </div>
 
             {secoesComBusca.map((secao, si) => (
-              <section key={secao.id} className="cd-secao">
+              <section key={secao.id} id={`secao-${secao.id}`} className="cd-secao">
                 <h2 className="cd-secao-titulo">
                   {secao.nome}
                   <span className="cd-secao-count"> · {secao.itens.length} {secao.itens.length === 1 ? 'item' : 'itens'}</span>
