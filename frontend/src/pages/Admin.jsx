@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import api, { imgUrl } from '../services/api';
 
 const fmt = (v) => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
 
@@ -65,7 +65,7 @@ function ModalSecao({ secao, onSalvar, onFechar, salvando }) {
   );
 }
 
-// ── Modal Item (lógica inalterada) ────────────────────────────────────────────
+// ── Modal Item ────────────────────────────────────────────────────────────────
 
 function ModalItem({ item, secoes, onSalvar, onFechar, salvando }) {
   const [nome, setNome] = useState(item?.nome ?? '');
@@ -73,14 +73,38 @@ function ModalItem({ item, secoes, onSalvar, onFechar, salvando }) {
   const [preco, setPreco] = useState(item?.preco != null ? Number(item.preco).toFixed(2) : '');
   const [disponivel, setDisponivel] = useState(item?.disponivel ?? true);
   const [secaoIds, setSecaoIds] = useState(item?.secoes?.map((s) => s.id) ?? []);
+  const [imagemUrl, setImagemUrl] = useState(item?.imagemUrl ?? '');
+  const [uploadando, setUploadando] = useState(false);
+  const [erroUpload, setErroUpload] = useState('');
+  const inputFileRef = useRef(null);
 
   function toggleSecao(id) {
     setSecaoIds((prev) => prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]);
   }
 
+  async function handleArquivo(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadando(true);
+    setErroUpload('');
+    const fd = new FormData();
+    fd.append('imagem', file);
+    try {
+      const res = await api.post('/admin/upload', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setImagemUrl(res.data.url);
+    } catch (err) {
+      setErroUpload(err.response?.data?.erro || 'Erro ao enviar imagem.');
+    } finally {
+      setUploadando(false);
+      e.target.value = '';
+    }
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
-    onSalvar({ id: item?.id, nome, descricao, preco: Number(preco), disponivel, secaoIds });
+    onSalvar({ id: item?.id, nome, descricao, preco: Number(preco), imagemUrl, disponivel, secaoIds });
   }
 
   return (
@@ -92,6 +116,44 @@ function ModalItem({ item, secoes, onSalvar, onFechar, salvando }) {
         </div>
         <form onSubmit={handleSubmit}>
           <div className="adm-modal-body">
+
+            {/* ── Upload de imagem ── */}
+            <div className="adm-form-row">
+              <label className="pb-label">Foto do item</label>
+              {uploadando ? (
+                <div className="adm-img-upload adm-img-upload--loading">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                  <span>Enviando imagem…</span>
+                </div>
+              ) : imagemUrl ? (
+                <div className="adm-img-preview">
+                  <img src={imgUrl(imagemUrl)} alt="Preview" className="adm-img-preview-img" />
+                  <div className="adm-img-preview-actions">
+                    <button type="button" className="adm-btn-sm" onClick={() => inputFileRef.current?.click()}>
+                      Trocar foto
+                    </button>
+                    <button type="button" className="adm-btn-sm adm-btn-sm--danger" onClick={() => setImagemUrl('')}>
+                      Remover
+                    </button>
+                  </div>
+                  <input ref={inputFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleArquivo} />
+                </div>
+              ) : (
+                <label className="adm-img-upload" htmlFor="adm-img-file">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--pb-ink-300)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="M21 15l-5-5L5 21" />
+                  </svg>
+                  <span style={{ fontWeight: 600, color: 'var(--pb-ink-500)', fontSize: '14px' }}>Clique para adicionar foto</span>
+                  <span style={{ fontSize: '12px', color: 'var(--pb-ink-300)' }}>JPG, PNG, WebP · máx. 5 MB</span>
+                  <input id="adm-img-file" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleArquivo} />
+                </label>
+              )}
+              {erroUpload && <p style={{ color: 'var(--pb-danger)', fontSize: '12px', marginTop: '6px' }}>{erroUpload}</p>}
+            </div>
+
             <div className="adm-form-row">
               <label className="pb-label">Nome do item</label>
               <input className="pb-input" value={nome} onChange={(e) => setNome(e.target.value)} required placeholder="Ex: Pizza Margherita" autoFocus />
@@ -124,7 +186,7 @@ function ModalItem({ item, secoes, onSalvar, onFechar, salvando }) {
           </div>
           <div className="adm-modal-footer">
             <button type="button" className="pb-btn pb-btn--ghost" onClick={onFechar}>Cancelar</button>
-            <button type="submit" className="pb-btn pb-btn--primary" disabled={salvando}>
+            <button type="submit" className="pb-btn pb-btn--primary" disabled={salvando || uploadando}>
               {salvando ? 'Salvando…' : item ? 'Salvar alterações' : 'Criar Item'}
             </button>
           </div>
@@ -393,8 +455,11 @@ export default function Admin() {
             {itensDaSecao.map((item) => (
               <div key={item.id} className={`adm-item-row${!item.disponivel ? ' adm-item-row--off' : ''}`}>
                 {/* Thumbnail */}
-                <div className="adm-item-thumb">
-                  <span style={{ fontSize: '20px' }}>🍽️</span>
+                <div className="adm-item-thumb" style={{ padding: 0, overflow: 'hidden' }}>
+                  {item.imagemUrl
+                    ? <img src={imgUrl(item.imagemUrl)} alt={item.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : <span style={{ fontSize: '20px' }}>🍽️</span>
+                  }
                 </div>
                 {/* Info */}
                 <div className="adm-item-info">

@@ -24,6 +24,7 @@ async function getCardapio(req, res) {
           nome: item.nome,
           descricao: item.descricao,
           preco: Number(item.preco),
+          imagemUrl: item.imagemUrl ?? null,
           disponivel: item.disponivel,
         })),
     }));

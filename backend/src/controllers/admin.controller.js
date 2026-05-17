@@ -1,4 +1,13 @@
 const prisma = require('../lib/prisma');
+const fs = require('fs');
+const path = require('path');
+
+// ── Upload de imagem ───────────────────────────────────────────────────────────
+
+async function uploadImagem(req, res) {
+  if (!req.file) return res.status(400).json({ erro: 'Nenhuma imagem enviada.' });
+  res.json({ url: `/uploads/${req.file.filename}` });
+}
 
 // ── Seções ────────────────────────────────────────────────────────────────────
 
@@ -66,27 +75,27 @@ async function excluirSecao(req, res) {
 
 // ── Itens ─────────────────────────────────────────────────────────────────────
 
+function mapItem(item) {
+  return {
+    id: item.id,
+    nome: item.nome,
+    descricao: item.descricao,
+    preco: Number(item.preco),
+    imagemUrl: item.imagemUrl ?? null,
+    disponivel: item.disponivel,
+    secoes: item.secoes?.map((rel) => rel.secao) ?? [],
+  };
+}
+
 async function listarItens(req, res) {
   try {
     const itens = await prisma.item.findMany({
       orderBy: { criadoEm: 'desc' },
       include: {
-        secoes: {
-          include: { secao: { select: { id: true, nome: true } } },
-        },
+        secoes: { include: { secao: { select: { id: true, nome: true } } } },
       },
     });
-
-    res.json({
-      itens: itens.map((item) => ({
-        id: item.id,
-        nome: item.nome,
-        descricao: item.descricao,
-        preco: Number(item.preco),
-        disponivel: item.disponivel,
-        secoes: item.secoes.map((rel) => rel.secao),
-      })),
-    });
+    res.json({ itens: itens.map(mapItem) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Erro ao listar itens.' });
@@ -94,7 +103,7 @@ async function listarItens(req, res) {
 }
 
 async function criarItem(req, res) {
-  const { nome, descricao, preco, disponivel = true, secaoIds = [] } = req.body;
+  const { nome, descricao, preco, imagemUrl, disponivel = true, secaoIds = [] } = req.body;
   if (!nome?.trim()) return res.status(400).json({ erro: 'Nome é obrigatório.' });
   if (preco === undefined || preco === null) return res.status(400).json({ erro: 'Preço é obrigatório.' });
 
@@ -104,23 +113,15 @@ async function criarItem(req, res) {
         nome: nome.trim(),
         descricao: descricao?.trim() || null,
         preco: Number(preco),
+        imagemUrl: imagemUrl || null,
         disponivel,
-        secoes: {
-          create: secaoIds.map((secaoId) => ({ secaoId: Number(secaoId) })),
-        },
+        secoes: { create: secaoIds.map((secaoId) => ({ secaoId: Number(secaoId) })) },
       },
       include: {
         secoes: { include: { secao: { select: { id: true, nome: true } } } },
       },
     });
-
-    res.status(201).json({
-      item: {
-        ...item,
-        preco: Number(item.preco),
-        secoes: item.secoes.map((rel) => rel.secao),
-      },
-    });
+    res.status(201).json({ item: mapItem(item) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Erro ao criar item.' });
@@ -129,7 +130,7 @@ async function criarItem(req, res) {
 
 async function atualizarItem(req, res) {
   const id = Number(req.params.id);
-  const { nome, descricao, preco, disponivel, secaoIds } = req.body;
+  const { nome, descricao, preco, imagemUrl, disponivel, secaoIds } = req.body;
 
   try {
     if (secaoIds !== undefined) {
@@ -142,25 +143,17 @@ async function atualizarItem(req, res) {
         ...(nome !== undefined && { nome: nome.trim() }),
         ...(descricao !== undefined && { descricao: descricao?.trim() || null }),
         ...(preco !== undefined && { preco: Number(preco) }),
+        ...(imagemUrl !== undefined && { imagemUrl: imagemUrl || null }),
         ...(disponivel !== undefined && { disponivel }),
         ...(secaoIds !== undefined && {
-          secoes: {
-            create: secaoIds.map((secaoId) => ({ secaoId: Number(secaoId) })),
-          },
+          secoes: { create: secaoIds.map((secaoId) => ({ secaoId: Number(secaoId) })) },
         }),
       },
       include: {
         secoes: { include: { secao: { select: { id: true, nome: true } } } },
       },
     });
-
-    res.json({
-      item: {
-        ...item,
-        preco: Number(item.preco),
-        secoes: item.secoes.map((rel) => rel.secao),
-      },
-    });
+    res.json({ item: mapItem(item) });
   } catch (err) {
     if (err.code === 'P2025') return res.status(404).json({ erro: 'Item não encontrado.' });
     console.error(err);
@@ -172,6 +165,13 @@ async function excluirItem(req, res) {
   const id = Number(req.params.id);
 
   try {
+    // Remove arquivo de imagem do disco se existir
+    const item = await prisma.item.findUnique({ where: { id }, select: { imagemUrl: true } });
+    if (item?.imagemUrl) {
+      const filePath = path.join(__dirname, '../../uploads', path.basename(item.imagemUrl));
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
+
     await prisma.itemSecao.deleteMany({ where: { itemId: id } });
     await prisma.item.delete({ where: { id } });
     res.json({ mensagem: 'Item excluído.' });
@@ -183,6 +183,7 @@ async function excluirItem(req, res) {
 }
 
 module.exports = {
+  uploadImagem,
   listarSecoes, criarSecao, atualizarSecao, excluirSecao,
   listarItens, criarItem, atualizarItem, excluirItem,
 };

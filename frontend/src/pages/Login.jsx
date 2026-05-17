@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import api from '../services/api';
 
 function Logo() {
@@ -16,6 +16,8 @@ export default function Login() {
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = location.state?.redirectTo;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -23,7 +25,7 @@ export default function Login() {
     setCarregando(true);
     try {
       await api.post('/auth/login', { telefone });
-      navigate('/verificar', { state: { telefone } });
+      navigate('/verificar', { state: { telefone, redirectTo } });
     } catch (err) {
       setErro(err.response?.data?.erro || 'Erro ao enviar código.');
     } finally {

@@ -1,6 +1,8 @@
 const { Router } = require('express');
 const { autenticar, apenasAdmin } = require('../middlewares/auth.middleware');
+const upload = require('../middlewares/upload');
 const {
+  uploadImagem,
   listarSecoes, criarSecao, atualizarSecao, excluirSecao,
   listarItens, criarItem, atualizarItem, excluirItem,
 } = require('../controllers/admin.controller');
@@ -8,6 +10,8 @@ const {
 const router = Router();
 
 router.use(autenticar, apenasAdmin);
+
+router.post('/upload', upload.single('imagem'), uploadImagem);
 
 router.get('/secoes', listarSecoes);
 router.post('/secoes', criarSecao);

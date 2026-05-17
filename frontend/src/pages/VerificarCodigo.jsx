@@ -13,6 +13,7 @@ export default function VerificarCodigo() {
   const { login } = useAuth();
 
   const telefone = location.state?.telefone;
+  const redirectTo = location.state?.redirectTo;
   const telefoneDisplay = telefone
     ? telefone.replace(/^55/, '').replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
     : '';
@@ -52,7 +53,7 @@ export default function VerificarCodigo() {
     try {
       const res = await api.post('/auth/verificar', { telefone, codigo });
       login(res.data.token, res.data.usuario);
-      navigate('/cardapio');
+      navigate(redirectTo || '/cardapio');
     } catch (err) {
       setErro(err.response?.data?.erro || 'Código inválido.');
       setDigits(['', '', '', '', '', '']);

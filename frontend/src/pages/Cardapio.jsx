@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import { useCart } from '../context/CartContext';
+import BottomNav from '../components/BottomNav';
+import api, { imgUrl } from '../services/api';
 
 const fmt = (v) => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
 
@@ -15,7 +17,7 @@ const GRADS = [
 const grad = (i) => GRADS[i % GRADS.length];
 const label = (nome) => nome.replace(/s$/i, '').toUpperCase().slice(0, 7);
 
-// ── Modal detalhe ─────────────────────────────────────────────────────────────
+// ── Modal detalhe do item ──────────────────────────────────────────────────────
 
 function ModalDetalhe({ item, secaoNome, gradIdx, onFechar, onAdicionar }) {
   const [qtd, setQtd] = useState(1);
@@ -24,13 +26,16 @@ function ModalDetalhe({ item, secaoNome, gradIdx, onFechar, onAdicionar }) {
   return (
     <div className="cd-modal-overlay" onClick={(e) => e.target === e.currentTarget && onFechar()}>
       <div className="cd-modal">
-        <div className="cd-modal-img" style={{ background: grad(gradIdx) }}>
-          <button className="cd-modal-back" onClick={onFechar} aria-label="Voltar">
+        <div className="cd-modal-img" style={item.imagemUrl ? {} : { background: grad(gradIdx) }}>
+          {item.imagemUrl && (
+            <img src={imgUrl(item.imagemUrl)} alt={item.nome} className="cd-item-img-cover" />
+          )}
+          <button className="cd-modal-back" onClick={onFechar} aria-label="Voltar" style={{ position: 'relative', zIndex: 1 }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M19 12H5M12 5l-7 7 7 7" />
             </svg>
           </button>
-          <span className="cd-modal-img-label">{label(secaoNome)}</span>
+          {!item.imagemUrl && <span className="cd-modal-img-label" style={{ position: 'relative', zIndex: 1 }}>{label(secaoNome)}</span>}
         </div>
         <div className="cd-modal-body">
           <span className="pb-badge pb-badge--success" style={{ fontSize: '11px', marginBottom: '10px', display: 'inline-flex' }}>
@@ -78,7 +83,8 @@ export default function Cardapio() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
   const [itemModal, setItemModal] = useState(null);
-  const [carrinho, setCarrinho] = useState([]);
+
+  const { adicionar, totalItens } = useCart();
   const { usuario, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -96,29 +102,15 @@ export default function Cardapio() {
 
   function handleLogout() { logout(); navigate('/login'); }
 
-  function adicionarAoCarrinho(item, quantidade, observacao) {
-    setCarrinho((prev) => {
-      const idx = prev.findIndex((c) => c.item.id === item.id);
-      if (idx >= 0) return prev.map((c, i) => i === idx ? { ...c, quantidade: c.quantidade + quantidade } : c);
-      return [...prev, { item, quantidade, observacao }];
-    });
-  }
-
-  function abrirModal(item, secaoNome, gradIdx) {
-    if (!usuario) { navigate('/login'); return; }
-    setItemModal({ item, secaoNome, gradIdx });
-  }
-
-  const totalItens = carrinho.reduce((a, c) => a + c.quantidade, 0);
-  const totalPreco = carrinho.reduce((a, c) => a + c.item.preco * c.quantidade, 0);
-
   const secoesVisiveis = secaoAtiva ? secoes.filter((s) => s.id === secaoAtiva) : secoes;
   const secoesComBusca = busca.trim()
-    ? secoesVisiveis.map((s) => ({ ...s, itens: s.itens.filter((i) => i.nome.toLowerCase().includes(busca.toLowerCase())) })).filter((s) => s.itens.length > 0)
+    ? secoesVisiveis
+        .map((s) => ({ ...s, itens: s.itens.filter((i) => i.nome.toLowerCase().includes(busca.toLowerCase())) }))
+        .filter((s) => s.itens.length > 0)
     : secoesVisiveis;
 
   return (
-    <div style={{ minHeight: '100svh', background: 'var(--pb-cream)', paddingBottom: totalItens > 0 ? '76px' : 0 }}>
+    <div className="cd-page">
 
       {/* ── Header Mobile ── */}
       <header className="cd-hm">
@@ -127,23 +119,16 @@ export default function Cardapio() {
             <div className="pb-logo-mark" style={{ width: '30px', height: '30px', fontSize: '15px' }}>P</div>
             PontoBom
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {totalItens > 0 && (
-              <button className="cd-icon-btn" style={{ position: 'relative' }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-                </svg>
-                <span className="cd-icon-badge">{totalItens}</span>
-              </button>
-            )}
-            <button className="cd-icon-btn" onClick={usuario ? handleLogout : () => navigate('/login')}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
-            </button>
-          </div>
+          <button
+            className="cd-icon-btn"
+            onClick={usuario ? handleLogout : () => navigate('/login')}
+            aria-label={usuario ? 'Sair' : 'Entrar'}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </button>
         </div>
       </header>
 
@@ -160,13 +145,34 @@ export default function Cardapio() {
             <a className="cd-nav-link" href="#">Sobre</a>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {usuario && <span style={{ fontSize: '14px', color: 'var(--pb-ink-700)', fontWeight: 500 }}>{usuario.nome || usuario.telefone}</span>}
-            <button className="pb-btn pb-btn--primary" style={{ fontSize: '13px', padding: '9px 20px' }}>
-              {totalItens > 0 ? `Carrinho · ${totalItens}` : 'Carrinho'}
-            </button>
             {usuario && (
-              <button className="pb-btn pb-btn--ghost" style={{ fontSize: '13px', padding: '9px 14px' }} onClick={handleLogout}>Sair</button>
+              <span style={{ fontSize: '14px', color: 'var(--pb-ink-700)', fontWeight: 500 }}>
+                {usuario.nome || usuario.telefone}
+              </span>
             )}
+            <button
+              className="pb-btn pb-btn--primary"
+              style={{ fontSize: '13px', padding: '9px 20px', position: 'relative' }}
+              onClick={() => navigate('/carrinho')}
+            >
+              {totalItens > 0 ? `Carrinho · ${totalItens}` : 'Carrinho'}
+              {totalItens > 0 && (
+                <span style={{
+                  position: 'absolute', top: '-6px', right: '-6px',
+                  width: '18px', height: '18px', borderRadius: '9px',
+                  background: 'var(--pb-mustard-500)', color: 'white',
+                  fontSize: '10px', fontWeight: 700,
+                  display: 'grid', placeItems: 'center',
+                  border: '2px solid white',
+                }}>
+                  {totalItens}
+                </span>
+              )}
+            </button>
+            {usuario
+              ? <button className="pb-btn pb-btn--ghost" style={{ fontSize: '13px', padding: '9px 14px' }} onClick={handleLogout}>Sair</button>
+              : <button className="pb-btn pb-btn--ghost" style={{ fontSize: '13px', padding: '9px 14px' }} onClick={() => navigate('/login')}>Entrar</button>
+            }
           </div>
         </div>
         <div className="cd-aberto-bar">
@@ -204,15 +210,27 @@ export default function Cardapio() {
         {/* Busca */}
         <div className="cd-search">
           <svg className="cd-search-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
           </svg>
-          <input className="cd-search-input" placeholder="Buscar pizza, lanche…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <input
+            className="cd-search-input"
+            placeholder="Buscar pizza, lanche…"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
         </div>
 
-        {loading && <div className="cd-vazio"><p style={{ color: 'var(--pb-ink-500)' }}>Carregando cardápio…</p></div>}
+        {loading && (
+          <div className="cd-vazio">
+            <p style={{ color: 'var(--pb-ink-500)' }}>Carregando cardápio…</p>
+          </div>
+        )}
         {!loading && erro && <div className="pb-erro">{erro}</div>}
         {!loading && !erro && secoes.length === 0 && (
-          <div className="cd-vazio"><span style={{ fontSize: '48px' }}>🍽️</span><p style={{ color: 'var(--pb-ink-500)', marginTop: '12px' }}>Nenhum item disponível.</p></div>
+          <div className="cd-vazio">
+            <span style={{ fontSize: '48px' }}>🍽️</span>
+            <p style={{ color: 'var(--pb-ink-500)', marginTop: '12px' }}>Nenhum item disponível.</p>
+          </div>
         )}
 
         {!loading && !erro && secoes.length > 0 && (
@@ -220,7 +238,11 @@ export default function Cardapio() {
             {/* Pills — mobile */}
             <div className="cd-pills">
               {secoes.map((s) => (
-                <button key={s.id} className={`cd-pill${secaoAtiva === s.id ? ' cd-pill--on' : ''}`} onClick={() => setSecaoAtiva(s.id)}>
+                <button
+                  key={s.id}
+                  className={`cd-pill${secaoAtiva === s.id ? ' cd-pill--on' : ''}`}
+                  onClick={() => setSecaoAtiva(s.id)}
+                >
                   {s.nome}
                 </button>
               ))}
@@ -229,7 +251,11 @@ export default function Cardapio() {
             {/* Abas — desktop */}
             <div className="cd-abas">
               {secoes.map((s) => (
-                <button key={s.id} className={`cd-aba${secaoAtiva === s.id ? ' cd-aba--on' : ''}`} onClick={() => setSecaoAtiva(s.id)}>
+                <button
+                  key={s.id}
+                  className={`cd-aba${secaoAtiva === s.id ? ' cd-aba--on' : ''}`}
+                  onClick={() => setSecaoAtiva(s.id)}
+                >
                   {s.nome}
                 </button>
               ))}
@@ -242,12 +268,19 @@ export default function Cardapio() {
                   <span className="cd-secao-count"> · {secao.itens.length} {secao.itens.length === 1 ? 'item' : 'itens'}</span>
                 </h2>
 
-                {/* Cards mobile — lista horizontal */}
+                {/* Cards mobile */}
                 <div className="cd-lista">
                   {secao.itens.map((item) => (
-                    <div key={item.id} className={`cd-card-h${!item.disponivel ? ' cd-card-h--off' : ''}`} onClick={() => item.disponivel && abrirModal(item, secao.nome, si)}>
-                      <div className="cd-card-h-thumb" style={{ background: grad(si) }}>
-                        <span className="cd-card-h-label">{label(secao.nome)}</span>
+                    <div
+                      key={item.id}
+                      className={`cd-card-h${!item.disponivel ? ' cd-card-h--off' : ''}`}
+                      onClick={() => item.disponivel && setItemModal({ item, secaoNome: secao.nome, gradIdx: si })}
+                    >
+                      <div className="cd-card-h-thumb" style={item.imagemUrl ? {} : { background: grad(si) }}>
+                        {item.imagemUrl
+                          ? <img src={imgUrl(item.imagemUrl)} alt={item.nome} className="cd-item-img-cover" />
+                          : <span className="cd-card-h-label">{label(secao.nome)}</span>
+                        }
                       </div>
                       <div className="cd-card-h-body">
                         <p className="cd-card-h-nome">{item.nome}</p>
@@ -255,7 +288,15 @@ export default function Cardapio() {
                         <div className="cd-card-h-footer">
                           <span className="cd-card-h-preco">{fmt(item.preco)}</span>
                           {item.disponivel
-                            ? <button className="cd-plus" onClick={(e) => { e.stopPropagation(); abrirModal(item, secao.nome, si); }}>+</button>
+                            ? (
+                              <button
+                                className="cd-plus"
+                                onClick={(e) => { e.stopPropagation(); setItemModal({ item, secaoNome: secao.nome, gradIdx: si }); }}
+                                aria-label={`Adicionar ${item.nome}`}
+                              >
+                                +
+                              </button>
+                            )
                             : <span className="pb-badge pb-badge--neutral" style={{ fontSize: '11px' }}>Indisponível</span>
                           }
                         </div>
@@ -264,19 +305,26 @@ export default function Cardapio() {
                   ))}
                 </div>
 
-                {/* Cards desktop — grid */}
+                {/* Cards desktop */}
                 <div className="cd-grid">
                   {secao.itens.map((item) => (
                     <div key={item.id} className={`cd-card-v${!item.disponivel ? ' cd-card-v--off' : ''}`}>
-                      <div className="cd-card-v-img" style={{ background: grad(si) }}>
-                        <span className="cd-card-v-label">{label(secao.nome)}</span>
+                      <div className="cd-card-v-img" style={item.imagemUrl ? {} : { background: grad(si) }}>
+                        {item.imagemUrl
+                          ? <img src={imgUrl(item.imagemUrl)} alt={item.nome} className="cd-item-img-cover" />
+                          : <span className="cd-card-v-label">{label(secao.nome)}</span>
+                        }
                       </div>
                       <div className="cd-card-v-body">
                         <p className="cd-card-v-nome">{item.nome}</p>
                         {item.descricao && <p className="cd-card-v-desc">{item.descricao}</p>}
                         <div className="cd-card-v-footer">
                           <span className="cd-card-v-preco">{fmt(item.preco)}</span>
-                          <button className="cd-add-btn" disabled={!item.disponivel} onClick={() => abrirModal(item, secao.nome, si)}>
+                          <button
+                            className="cd-add-btn"
+                            disabled={!item.disponivel}
+                            onClick={() => setItemModal({ item, secaoNome: secao.nome, gradIdx: si })}
+                          >
                             + Adicionar
                           </button>
                         </div>
@@ -290,35 +338,18 @@ export default function Cardapio() {
         )}
       </main>
 
-      {/* ── Rodapé carrinho ── */}
-      {totalItens > 0 && (
-        <div className="cd-cart-bar">
-          <div className="cd-cart-bar-inner">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-              </svg>
-              <span>Ver carrinho · {totalItens} {totalItens === 1 ? 'item' : 'itens'}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontWeight: 700 }}>{fmt(totalPreco)}</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Modal detalhe ── */}
+      {/* ── Modal detalhe do item ── */}
       {itemModal && (
         <ModalDetalhe
           item={itemModal.item}
           secaoNome={itemModal.secaoNome}
           gradIdx={itemModal.gradIdx}
           onFechar={() => setItemModal(null)}
-          onAdicionar={adicionarAoCarrinho}
+          onAdicionar={adicionar}
         />
       )}
+
+      <BottomNav />
     </div>
   );
 }

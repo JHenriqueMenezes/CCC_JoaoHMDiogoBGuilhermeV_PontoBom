@@ -1,10 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
 import Login from './pages/Login';
 import LoginAdmin from './pages/LoginAdmin';
 import Cadastro from './pages/Cadastro';
 import VerificarCodigo from './pages/VerificarCodigo';
 import Cardapio from './pages/Cardapio';
+import Carrinho from './pages/Carrinho';
+import Checkout from './pages/Checkout';
+import Historico from './pages/Historico';
 import Admin from './pages/Admin';
 
 function RotaAdmin({ children }) {
@@ -16,19 +20,24 @@ function RotaAdmin({ children }) {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Cardapio />} />
-          <Route path="/cardapio" element={<Cardapio />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/cadastro" element={<Cadastro />} />
-          <Route path="/verificar" element={<VerificarCodigo />} />
-          <Route path="/admin/login" element={<LoginAdmin />} />
-          <Route path="/admin" element={
-            <RotaAdmin><Admin /></RotaAdmin>
-          } />
-        </Routes>
-      </BrowserRouter>
+      <CartProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Cardapio />} />
+            <Route path="/cardapio" element={<Cardapio />} />
+            <Route path="/carrinho" element={<Carrinho />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/historico" element={<Historico />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/cadastro" element={<Cadastro />} />
+            <Route path="/verificar" element={<VerificarCodigo />} />
+            <Route path="/admin/login" element={<LoginAdmin />} />
+            <Route path="/admin" element={
+              <RotaAdmin><Admin /></RotaAdmin>
+            } />
+          </Routes>
+        </BrowserRouter>
+      </CartProvider>
     </AuthProvider>
   );
 }
