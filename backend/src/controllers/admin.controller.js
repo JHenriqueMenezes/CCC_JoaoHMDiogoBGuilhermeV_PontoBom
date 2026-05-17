@@ -1,12 +1,11 @@
 const prisma = require('../lib/prisma');
-const fs = require('fs');
-const path = require('path');
 
 // ── Upload de imagem ───────────────────────────────────────────────────────────
 
 async function uploadImagem(req, res) {
   if (!req.file) return res.status(400).json({ erro: 'Nenhuma imagem enviada.' });
-  res.json({ url: `/uploads/${req.file.filename}` });
+  // Cloudinary retorna a URL pública em req.file.path
+  res.json({ url: req.file.path });
 }
 
 // ── Seções ────────────────────────────────────────────────────────────────────
@@ -165,13 +164,6 @@ async function excluirItem(req, res) {
   const id = Number(req.params.id);
 
   try {
-    // Remove arquivo de imagem do disco se existir
-    const item = await prisma.item.findUnique({ where: { id }, select: { imagemUrl: true } });
-    if (item?.imagemUrl) {
-      const filePath = path.join(__dirname, '../../uploads', path.basename(item.imagemUrl));
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    }
-
     await prisma.itemSecao.deleteMany({ where: { itemId: id } });
     await prisma.item.delete({ where: { id } });
     res.json({ mensagem: 'Item excluído.' });
