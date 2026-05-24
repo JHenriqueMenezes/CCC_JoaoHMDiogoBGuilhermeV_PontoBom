@@ -15,10 +15,14 @@ const authRoutes = require('./routes/auth.routes');
 const cardapioRoutes = require('./routes/cardapio.routes');
 const adminRoutes = require('./routes/admin.routes');
 const pedidoRoutes = require('./routes/pedido.routes');
+const { asaasWebhook } = require('./controllers/webhook.controller');
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Webhook Asaas — sem autenticação, Asaas envia POST server-to-server
+app.post('/webhooks/asaas', asaasWebhook);
 
 app.use('/auth', authRoutes);
 app.use('/cardapio', cardapioRoutes);

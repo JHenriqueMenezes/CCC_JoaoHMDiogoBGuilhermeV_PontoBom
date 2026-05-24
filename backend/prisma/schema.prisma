@@ -81,15 +81,16 @@ model ItemSecao {
 }
 
 model Pedido {
-  id             Int            @id @default(autoincrement())
-  numero         String         @unique
-  usuarioId      Int
-  formaPagamento FormaPagamento
-  statusAtual    StatusPedido   @default(RECEBIDO)
-  estimativaMin  Int?
-  total          Decimal        @db.Decimal(10, 2)
-  criadoEm      DateTime       @default(now())
-  atualizadoEm  DateTime       @updatedAt
+  id              Int            @id @default(autoincrement())
+  numero          String         @unique
+  usuarioId       Int
+  formaPagamento  FormaPagamento
+  statusAtual     StatusPedido   @default(RECEBIDO)
+  estimativaMin   Int?
+  total           Decimal        @db.Decimal(10, 2)
+  asaasPaymentId  String?
+  criadoEm       DateTime       @default(now())
+  atualizadoEm   DateTime       @updatedAt
 
   usuario  Usuario          @relation(fields: [usuarioId], references: [id])
   itens    ItemPedido[]
