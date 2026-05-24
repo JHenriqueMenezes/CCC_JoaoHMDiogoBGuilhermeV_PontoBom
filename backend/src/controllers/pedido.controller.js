@@ -94,6 +94,8 @@ async function criarPedido(req, res) {
           };
         }
       } catch (e) {
+        await prisma.itemPedido.deleteMany({ where: { pedidoId: pedido.id } });
+        await prisma.historicoStatus.deleteMany({ where: { pedidoId: pedido.id } });
         await prisma.pedido.delete({ where: { id: pedido.id } });
         const msg = e.data?.errors?.[0]?.description || e.message || 'Erro no pagamento.';
         return res.status(400).json({ erro: msg });
