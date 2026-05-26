@@ -4,7 +4,7 @@ const asaas = require('../services/asaas');
 
 async function criarPedido(req, res) {
   const usuarioId = req.usuario.id;
-  const { formaPagamento = 'AVISTA', metodoPagamento, itens, cartao, titular } = req.body;
+  const { formaPagamento = 'AVISTA', metodoPagamento, itens, cartao, titular, cpf } = req.body;
 
   if (!itens || itens.length === 0) {
     return res.status(400).json({ erro: 'O pedido deve ter pelo menos um item.' });
@@ -56,6 +56,7 @@ async function criarPedido(req, res) {
         const cliente = await asaas.criarCliente({
           nome: usuario?.nome,
           telefone: usuario?.telefone,
+          cpf,
         });
 
         if (metodoPagamento === 'PIX') {

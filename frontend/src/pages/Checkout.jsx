@@ -223,6 +223,7 @@ export default function Checkout() {
 
   const [cartao, setCartao] = useState({ numero: '', nomeTitular: '', validade: '', cvv: '' });
   const [titular, setTitular] = useState({ cpf: '', cep: '', numeroEndereco: '' });
+  const [cpfPix, setCpfPix] = useState('');
 
   useEffect(() => {
     if (!usuario) navigate('/login', { state: { redirectTo: '/checkout' } });
@@ -247,7 +248,12 @@ export default function Checkout() {
       };
 
       if (formaPagamento === 'PIX') {
+        if (!cpfPix) {
+          setErro('Informe seu CPF para pagamento via PIX.');
+          return;
+        }
         payload.metodoPagamento = 'PIX';
+        payload.cpf = cpfPix;
       } else if (formaPagamento === 'CARTAO') {
         if (!cartao.numero || !cartao.nomeTitular || !cartao.validade || !cartao.cvv) {
           setErro('Preencha todos os dados do cartão.');
@@ -377,6 +383,23 @@ export default function Checkout() {
             </div>
           ))}
         </div>
+
+        {/* CPF para PIX */}
+        {formaPagamento === 'PIX' && (
+          <div className="checkout-secao">
+            <h2 className="checkout-secao-titulo">Dados para cobrança</h2>
+            <div>
+              <label style={LABEL}>CPF do pagador</label>
+              <input
+                style={INPUT}
+                placeholder="000.000.000-00"
+                value={cpfPix}
+                inputMode="numeric"
+                onChange={e => setCpfPix(fmtCpf(e.target.value))}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Formulário cartão de crédito */}
         {formaPagamento === 'CARTAO' && (

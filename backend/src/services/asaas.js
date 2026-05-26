@@ -27,10 +27,11 @@ function proximoDia() {
   return d.toISOString().split('T')[0];
 }
 
-async function criarCliente({ nome, telefone }) {
+async function criarCliente({ nome, telefone, cpf }) {
   return req('POST', '/customers', {
     name: nome || 'Cliente PontoBom',
     mobilePhone: telefone ? telefone.replace(/\D/g, '') : undefined,
+    cpfCnpj: cpf ? cpf.replace(/\D/g, '') : undefined,
   });
 }
 
