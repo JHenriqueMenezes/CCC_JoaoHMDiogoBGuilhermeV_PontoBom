@@ -15,6 +15,7 @@ import AdminPedidos from './pages/AdminPedidos';
 import AdminMensagens from './pages/AdminMensagens';
 import AdminConfig from './pages/AdminConfig';
 import AdminUsuarios from './pages/AdminUsuarios';
+import AdminHistorico from './pages/AdminHistorico';
 
 function RotaAdmin({ children }) {
   const { usuario } = useAuth();
@@ -52,6 +53,9 @@ function App() {
             } />
             <Route path="/admin/usuarios" element={
               <RotaAdmin><AdminUsuarios /></RotaAdmin>
+            } />
+            <Route path="/admin/historico" element={
+              <RotaAdmin><AdminHistorico /></RotaAdmin>
             } />
           </Routes>
         </BrowserRouter>

@@ -13,6 +13,7 @@ const {
   aceitarPedido,
   recusarPedido,
   atualizarStatusPedido,
+  historicoAdmin,
 } = require('../controllers/pedido.controller');
 const { listarMensagens, atualizarMensagem } = require('../controllers/mensagem.controller');
 const { alternarRestaurante } = require('../controllers/config.controller');
@@ -48,8 +49,9 @@ router.patch('/config/restaurante', alternarRestaurante);
 router.get('/mensagens', listarMensagens);
 router.put('/mensagens/:chave', atualizarMensagem);
 
-// ── Pedidos — /metrics deve vir antes de /:id ────────────────────────────────
+// ── Pedidos — rotas fixas antes de /:id ──────────────────────────────────────
 router.get('/pedidos/metrics', metricas);
+router.get('/pedidos/historico', historicoAdmin);
 router.get('/pedidos', listarPedidosAdmin);
 router.post('/pedidos/:id/aceitar', aceitarPedido);
 router.post('/pedidos/:id/recusar', recusarPedido);

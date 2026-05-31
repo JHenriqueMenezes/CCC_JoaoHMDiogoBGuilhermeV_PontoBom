@@ -3293,3 +3293,151 @@ a { text-decoration: none; }
   }
   .usr-data { display: none; }
 }
+
+/* ══════════════════════════════════════════════════════════
+   Admin — Histórico /admin/historico
+   ══════════════════════════════════════════════════════════ */
+
+.hadm-conteudo {
+  flex: 1;
+  padding: 36px 40px 60px;
+  overflow-y: auto;
+  background: var(--pb-cream);
+}
+.hadm-page-header { margin-bottom: 24px; }
+.hadm-page-titulo {
+  font-family: var(--pb-font-display);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--pb-ink-900);
+  margin: 0 0 4px;
+}
+.hadm-page-sub { font-size: 14px; color: var(--pb-ink-400); margin: 0; }
+
+/* Filtros */
+.hadm-filtros {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.hadm-select {
+  padding: 9px 12px;
+  border: 1.5px solid var(--pb-line);
+  border-radius: var(--pb-r-md);
+  font-size: 13px;
+  font-family: var(--pb-font-text);
+  color: var(--pb-ink-700);
+  background: white;
+  cursor: pointer;
+  outline: none;
+}
+.hadm-select:focus { border-color: var(--pb-terracotta-500); }
+.hadm-busca-form { display: flex; gap: 8px; flex: 1; min-width: 240px; }
+.hadm-busca-input {
+  flex: 1;
+  padding: 9px 14px;
+  border: 1.5px solid var(--pb-line);
+  border-radius: var(--pb-r-md);
+  font-size: 13px;
+  font-family: var(--pb-font-text);
+  color: var(--pb-ink-900);
+  background: white;
+  outline: none;
+}
+.hadm-busca-input:focus { border-color: var(--pb-terracotta-500); }
+
+/* Tabela */
+.hadm-tabela {
+  background: white;
+  border: 1.5px solid var(--pb-line);
+  border-radius: var(--pb-r-lg);
+  overflow: hidden;
+}
+.hadm-tabela-header {
+  display: grid;
+  grid-template-columns: 0.7fr 1.2fr 1.4fr 0.7fr 0.6fr 1.2fr 0.8fr;
+  gap: 10px;
+  padding: 11px 20px;
+  background: var(--pb-paper);
+  border-bottom: 1px solid var(--pb-line);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pb-ink-400);
+}
+.hadm-linha {
+  display: grid;
+  grid-template-columns: 0.7fr 1.2fr 1.4fr 0.7fr 0.6fr 1.2fr 0.8fr;
+  gap: 10px;
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--pb-line);
+  align-items: center;
+  transition: background 0.1s;
+}
+.hadm-linha:last-child { border-bottom: none; }
+.hadm-linha:hover { background: var(--pb-paper); }
+.hadm-linha--recusado { opacity: 0.75; }
+
+.hadm-numero { font-size: 13px; font-weight: 700; color: var(--pb-ink-900); }
+.hadm-cliente { font-size: 13px; color: var(--pb-ink-700); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hadm-itens   { font-size: 13px; color: var(--pb-ink-500); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hadm-total   { font-size: 13px; font-weight: 600; color: var(--pb-ink-900); }
+.hadm-pgto    { font-size: 12px; color: var(--pb-ink-400); }
+.hadm-data    { font-size: 12px; color: var(--pb-ink-400); }
+
+.hadm-badge {
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--pb-r-pill);
+}
+.hadm-badge--ok       { background: #e6f4ea; color: #2d7a3a; }
+.hadm-badge--recusado { background: #fdecea; color: #c0392b; }
+
+.hadm-motivo {
+  padding: 10px 20px 14px 36px;
+  font-size: 13px;
+  color: var(--pb-ink-500);
+  background: #fdf6f6;
+  border-bottom: 1px solid var(--pb-line);
+}
+
+/* Paginação */
+.hadm-paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px 0 0;
+}
+.hadm-pg-btn {
+  padding: 8px 16px;
+  border: 1.5px solid var(--pb-line);
+  border-radius: var(--pb-r-md);
+  background: white;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pb-ink-700);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.hadm-pg-btn:hover:not(:disabled) { background: var(--pb-paper); }
+.hadm-pg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.hadm-pg-info { font-size: 13px; color: var(--pb-ink-400); }
+
+@media (max-width: 1100px) {
+  .hadm-tabela-header,
+  .hadm-linha { grid-template-columns: 0.7fr 1fr 1.2fr 0.7fr 1fr 0.8fr; }
+  .hadm-pgto { display: none; }
+}
+@media (max-width: 900px) {
+  .hadm-conteudo { padding: 24px 20px 48px; }
+  .hadm-tabela-header { display: none; }
+  .hadm-linha { grid-template-columns: 0.8fr 1fr 1fr 0.8fr; gap: 6px; padding: 12px 16px; }
+  .hadm-itens, .hadm-data { display: none; }
+  .hadm-busca-form { min-width: 100%; }
+}

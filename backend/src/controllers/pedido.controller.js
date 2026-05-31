@@ -468,6 +468,79 @@ async function atualizarStatusPedido(req, res) {
   }
 }
 
+async function historicoAdmin(req, res) {
+  const { status, periodo = '7d', busca = '', pagina = '1' } = req.query;
+  const pg = Math.max(1, Number(pagina));
+  const POR_PAGINA = 25;
+
+  const agora = new Date();
+  let dataInicio;
+  if (periodo === 'hoje') {
+    dataInicio = new Date(agora);
+    dataInicio.setHours(0, 0, 0, 0);
+  } else if (periodo === '7d') {
+    dataInicio = new Date(agora);
+    dataInicio.setDate(agora.getDate() - 7);
+  } else if (periodo === '30d') {
+    dataInicio = new Date(agora);
+    dataInicio.setDate(agora.getDate() - 30);
+  }
+
+  const statusFiltro = status === 'FINALIZADO' || status === 'RECUSADO'
+    ? [status]
+    : ['FINALIZADO', 'RECUSADO'];
+
+  const where = {
+    statusAtual: { in: statusFiltro },
+    ...(dataInicio ? { criadoEm: { gte: dataInicio } } : {}),
+    ...(busca.trim() ? {
+      OR: [
+        { numero: { contains: busca.trim(), mode: 'insensitive' } },
+        { usuario: { nome: { contains: busca.trim(), mode: 'insensitive' } } },
+        { usuario: { telefone: { contains: busca.trim() } } },
+      ],
+    } : {}),
+  };
+
+  try {
+    const [total, pedidos] = await Promise.all([
+      prisma.pedido.count({ where }),
+      prisma.pedido.findMany({
+        where,
+        orderBy: { criadoEm: 'desc' },
+        skip: (pg - 1) * POR_PAGINA,
+        take: POR_PAGINA,
+        include: {
+          usuario: { select: { nome: true, telefone: true } },
+          itens: { include: { item: { select: { nome: true } } } },
+          historico: { where: { status: 'RECUSADO' }, select: { motivo: true }, take: 1 },
+        },
+      }),
+    ]);
+
+    res.json({
+      pedidos: pedidos.map((p) => ({
+        id: p.id,
+        numero: p.numero,
+        statusAtual: p.statusAtual,
+        formaPagamento: p.formaPagamento,
+        total: Number(p.total),
+        criadoEm: p.criadoEm,
+        atualizadoEm: p.atualizadoEm,
+        cliente: p.usuario ? { nome: p.usuario.nome, telefone: p.usuario.telefone } : null,
+        resumoItens: p.itens.map((i) => ({ nome: i.item?.nome ?? '?', quantidade: i.quantidade })),
+        motivo: p.historico[0]?.motivo ?? null,
+      })),
+      total,
+      pagina: pg,
+      totalPaginas: Math.ceil(total / POR_PAGINA),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro ao buscar histórico.' });
+  }
+}
+
 module.exports = {
   criarPedido,
   consultarPagamentoPedido,
@@ -478,4 +551,5 @@ module.exports = {
   aceitarPedido,
   recusarPedido,
   atualizarStatusPedido,
+  historicoAdmin,
 };
