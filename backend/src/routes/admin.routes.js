@@ -5,6 +5,7 @@ const {
   uploadImagem,
   listarSecoes, criarSecao, atualizarSecao, excluirSecao,
   listarItens, criarItem, atualizarItem, excluirItem,
+  listarAdmins, criarAdmin, alternarStatusAdmin,
 } = require('../controllers/admin.controller');
 const {
   listarPedidosAdmin,
@@ -14,6 +15,7 @@ const {
   atualizarStatusPedido,
 } = require('../controllers/pedido.controller');
 const { listarMensagens, atualizarMensagem } = require('../controllers/mensagem.controller');
+const { alternarRestaurante } = require('../controllers/config.controller');
 
 const router = Router();
 
@@ -33,6 +35,14 @@ router.get('/itens', listarItens);
 router.post('/itens', criarItem);
 router.put('/itens/:id', atualizarItem);
 router.delete('/itens/:id', excluirItem);
+
+// ── Usuários admin ───────────────────────────────────────────────────────────
+router.get('/usuarios', listarAdmins);
+router.post('/usuarios', criarAdmin);
+router.patch('/usuarios/:id/status', alternarStatusAdmin);
+
+// ── Configurações ────────────────────────────────────────────────────────────
+router.patch('/config/restaurante', alternarRestaurante);
 
 // ── Mensagens WhatsApp ───────────────────────────────────────────────────────
 router.get('/mensagens', listarMensagens);

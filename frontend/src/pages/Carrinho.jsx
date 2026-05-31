@@ -1,8 +1,9 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import BottomNav from '../components/BottomNav';
-import { imgUrl } from '../services/api';
+import api, { imgUrl } from '../services/api';
 
 const fmt = (v) => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
 
@@ -10,8 +11,16 @@ export default function Carrinho() {
   const { itens, remover, alterarQtd, totalItens, totalPreco } = useCart();
   const { usuario } = useAuth();
   const navigate = useNavigate();
+  const [restauranteAberto, setRestauranteAberto] = useState(true);
+
+  useEffect(() => {
+    api.get('/status')
+      .then((r) => setRestauranteAberto(r.data.aberto))
+      .catch(() => setRestauranteAberto(true));
+  }, []);
 
   function handleFinalizar() {
+    if (!restauranteAberto) return;
     if (!usuario) {
       navigate('/login', { state: { redirectTo: '/carrinho' } });
     } else {
@@ -101,12 +110,21 @@ export default function Carrinho() {
       </div>
 
       <div className="carrinho-footer">
+        {!restauranteAberto && (
+          <div className="carrinho-fechado-banner">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>Restaurante fechado no momento. Novos pedidos não estão sendo aceitos.</span>
+          </div>
+        )}
+
         <div className="carrinho-total-row">
           <span className="carrinho-total-label">Total do pedido</span>
           <span className="carrinho-total-valor">{fmt(totalPreco)}</span>
         </div>
 
-        {!usuario && (
+        {!usuario && restauranteAberto && (
           <p className="carrinho-login-hint">
             Você precisa estar logado para finalizar o pedido.
           </p>
@@ -115,6 +133,8 @@ export default function Carrinho() {
         <button
           className="pb-btn pb-btn--primary pb-btn--block pb-btn--lg"
           onClick={handleFinalizar}
+          disabled={!restauranteAberto}
+          style={!restauranteAberto ? { opacity: 0.45, cursor: 'not-allowed' } : undefined}
         >
           {usuario ? 'Finalizar pedido' : 'Entrar para finalizar'}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">

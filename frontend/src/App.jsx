@@ -13,6 +13,8 @@ import AcompanharPedido from './pages/AcompanharPedido';
 import Admin from './pages/Admin';
 import AdminPedidos from './pages/AdminPedidos';
 import AdminMensagens from './pages/AdminMensagens';
+import AdminConfig from './pages/AdminConfig';
+import AdminUsuarios from './pages/AdminUsuarios';
 
 function RotaAdmin({ children }) {
   const { usuario } = useAuth();
@@ -44,6 +46,12 @@ function App() {
             } />
             <Route path="/admin/mensagens" element={
               <RotaAdmin><AdminMensagens /></RotaAdmin>
+            } />
+            <Route path="/admin/config" element={
+              <RotaAdmin><AdminConfig /></RotaAdmin>
+            } />
+            <Route path="/admin/usuarios" element={
+              <RotaAdmin><AdminUsuarios /></RotaAdmin>
             } />
           </Routes>
         </BrowserRouter>

@@ -102,7 +102,7 @@ async function loginAdmin(req, res) {
 
   const usuario = await prisma.usuario.findUnique({ where: { email } });
 
-  if (!usuario || usuario.role !== 'ADMIN') {
+  if (!usuario || usuario.role !== 'ADMIN' || !usuario.ativo) {
     return res.status(401).json({ erro: 'Credenciais inválidas.' });
   }
 

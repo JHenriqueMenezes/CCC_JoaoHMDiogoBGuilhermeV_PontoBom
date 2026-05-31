@@ -16,6 +16,7 @@ const cardapioRoutes = require('./routes/cardapio.routes');
 const adminRoutes = require('./routes/admin.routes');
 const pedidoRoutes = require('./routes/pedido.routes');
 const { asaasWebhook } = require('./controllers/webhook.controller');
+const { statusRestaurante } = require('./controllers/config.controller');
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -23,6 +24,9 @@ app.get('/health', (req, res) => {
 
 // Webhook Asaas — sem autenticação, Asaas envia POST server-to-server
 app.post('/webhooks/asaas', asaasWebhook);
+
+// Status público do restaurante
+app.get('/status', statusRestaurante);
 
 app.use('/auth', authRoutes);
 app.use('/cardapio', cardapioRoutes);

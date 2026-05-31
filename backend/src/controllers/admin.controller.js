@@ -1,4 +1,5 @@
 const prisma = require('../lib/prisma');
+const bcrypt = require('bcryptjs');
 
 // ── Upload de imagem ───────────────────────────────────────────────────────────
 
@@ -174,8 +175,59 @@ async function excluirItem(req, res) {
   }
 }
 
+// ── Usuários administradores ──────────────────────────────────────────────────
+
+const CAMPOS_ADMIN = { id: true, nome: true, email: true, ativo: true, criadoEm: true };
+
+async function listarAdmins(req, res) {
+  const usuarios = await prisma.usuario.findMany({
+    where: { role: 'ADMIN' },
+    select: CAMPOS_ADMIN,
+    orderBy: { criadoEm: 'asc' },
+  });
+  res.json({ usuarios });
+}
+
+async function criarAdmin(req, res) {
+  const { nome, email, senha } = req.body;
+  if (!nome?.trim() || !email?.trim() || !senha?.trim()) {
+    return res.status(400).json({ erro: 'Nome, e-mail e senha são obrigatórios.' });
+  }
+  if (senha.length < 6) {
+    return res.status(400).json({ erro: 'A senha deve ter no mínimo 6 caracteres.' });
+  }
+  const existente = await prisma.usuario.findUnique({ where: { email } });
+  if (existente) {
+    return res.status(409).json({ erro: 'Já existe um usuário com esse e-mail.' });
+  }
+  const hash = await bcrypt.hash(senha, 10);
+  const usuario = await prisma.usuario.create({
+    data: { nome, email, senha: hash, role: 'ADMIN' },
+    select: CAMPOS_ADMIN,
+  });
+  res.status(201).json({ usuario });
+}
+
+async function alternarStatusAdmin(req, res) {
+  const id = Number(req.params.id);
+  if (id === req.usuario.id) {
+    return res.status(400).json({ erro: 'Você não pode alterar o status da sua própria conta.' });
+  }
+  const alvo = await prisma.usuario.findUnique({ where: { id } });
+  if (!alvo || alvo.role !== 'ADMIN') {
+    return res.status(404).json({ erro: 'Administrador não encontrado.' });
+  }
+  const atualizado = await prisma.usuario.update({
+    where: { id },
+    data: { ativo: !alvo.ativo },
+    select: CAMPOS_ADMIN,
+  });
+  res.json({ usuario: atualizado });
+}
+
 module.exports = {
   uploadImagem,
   listarSecoes, criarSecao, atualizarSecao, excluirSecao,
   listarItens, criarItem, atualizarItem, excluirItem,
+  listarAdmins, criarAdmin, alternarStatusAdmin,
 };
