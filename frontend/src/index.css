@@ -449,9 +449,13 @@ a { text-decoration: none; }
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding-bottom: 6px;
-  margin-bottom: 24px;
+  padding: 10px 20px;
+  margin: 0 -20px 24px;
   scrollbar-width: none;
+  position: sticky;
+  top: 60px;
+  z-index: 10;
+  background: var(--pb-cream);
 }
 .cd-pills::-webkit-scrollbar { display: none; }
 .cd-pill {
@@ -2884,4 +2888,169 @@ a { text-decoration: none; }
 @media (max-width: 900px) {
   .kb-kanban { grid-template-columns: 1fr; }
   .kb-kpis   { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ══════════════════════════════════════════════════════════
+   Admin — Mensagens WhatsApp /admin/mensagens
+   ══════════════════════════════════════════════════════════ */
+
+.msg-conteudo {
+  flex: 1;
+  padding: 36px 40px 60px;
+  overflow-y: auto;
+  background: var(--pb-cream);
+}
+
+.msg-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+.msg-page-titulo {
+  font-family: var(--pb-font-display);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--pb-ink-900);
+  margin: 0 0 4px;
+}
+.msg-page-sub {
+  font-size: 14px;
+  color: var(--pb-ink-400);
+  margin: 0;
+}
+
+.msg-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.msg-card {
+  background: white;
+  border: 1.5px solid var(--pb-line);
+  border-radius: var(--pb-r-lg);
+  padding: 24px 28px;
+  transition: border-color 0.15s;
+}
+.msg-card--alterado {
+  border-color: var(--pb-terracotta-300);
+}
+
+.msg-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.msg-card-titulo {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--pb-ink-900);
+  margin: 0 0 3px;
+}
+.msg-card-desc {
+  font-size: 13px;
+  color: var(--pb-ink-400);
+  margin: 0;
+}
+.msg-quando {
+  font-size: 11px;
+  color: var(--pb-ink-300);
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-top: 3px;
+}
+
+.msg-vars {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.msg-vars-label {
+  font-size: 12px;
+  color: var(--pb-ink-400);
+  font-weight: 600;
+}
+.msg-var-chip {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: monospace;
+  background: var(--pb-terracotta-50);
+  color: var(--pb-terracotta-700);
+  border: 1px solid var(--pb-terracotta-100);
+  border-radius: 4px;
+  padding: 2px 7px;
+}
+
+.msg-editor {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.msg-editor-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.msg-col-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--pb-ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.msg-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--pb-line);
+  border-radius: var(--pb-r-md);
+  font-size: 13px;
+  font-family: monospace;
+  line-height: 1.55;
+  color: var(--pb-ink-900);
+  resize: vertical;
+  outline: none;
+  background: var(--pb-paper);
+  transition: border-color 0.15s;
+}
+.msg-textarea:focus {
+  border-color: var(--pb-terracotta-500);
+  box-shadow: 0 0 0 3px rgba(201,90,46,0.10);
+}
+.msg-preview {
+  padding: 12px 14px;
+  border: 1.5px solid var(--pb-line);
+  border-radius: var(--pb-r-md);
+  font-size: 13px;
+  font-family: var(--pb-font-text);
+  line-height: 1.55;
+  color: var(--pb-ink-700);
+  background: #f0f7f0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  min-height: 120px;
+}
+
+.msg-erro {
+  font-size: 13px;
+  color: var(--pb-danger);
+  margin: 0 0 12px;
+}
+
+.msg-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+@media (max-width: 900px) {
+  .msg-conteudo { padding: 24px 20px 48px; }
+  .msg-editor { grid-template-columns: 1fr; }
 }

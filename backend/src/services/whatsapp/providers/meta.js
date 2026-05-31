@@ -12,6 +12,8 @@ const ACCESS_TOKEN = process.env.META_ACCESS_TOKEN;
 const API_VERSION = process.env.META_API_VERSION || 'v19.0';
 const BASE_URL = `https://graph.facebook.com/${API_VERSION}/${PHONE_NUMBER_ID}/messages`;
 
+const { obterTemplate, aplicar } = require('../templates');
+
 // Envia mensagem de texto livre (só funciona dentro da janela de 24h após o cliente escrever)
 async function enviarMensagem(telefone, mensagem) {
   const numeroFormatado = telefone.replace(/\D/g, '');
@@ -39,7 +41,6 @@ async function enviarMensagem(telefone, mensagem) {
 }
 
 // Envia template aprovado pela Meta (necessário fora da janela de 24h)
-// O template 'hello_world' já vem aprovado por padrão para testes
 async function enviarTemplate(telefone, templateName, languageCode = 'pt_BR', components = []) {
   const numeroFormatado = telefone.replace(/\D/g, '');
 
@@ -53,11 +54,7 @@ async function enviarTemplate(telefone, templateName, languageCode = 'pt_BR', co
       messaging_product: 'whatsapp',
       to: numeroFormatado,
       type: 'template',
-      template: {
-        name: templateName,
-        language: { code: languageCode },
-        components,
-      },
+      template: { name: templateName, language: { code: languageCode }, components },
     }),
   });
 
@@ -69,57 +66,44 @@ async function enviarTemplate(telefone, templateName, languageCode = 'pt_BR', co
   return response.json();
 }
 
-// NOTA: Para usar OTP com a API da Meta, é necessário criar e aprovar
-// um template de mensagem do tipo "AUTHENTICATION" no Meta Business Manager.
-// Enquanto o template não for aprovado, use enviarMensagem dentro da janela de 24h.
 async function enviarCodigoVerificacao(telefone, codigo) {
-  const mensagem = `🔐 *PontoBom* — Seu código de verificação é: *${codigo}*\n\nEste código expira em 10 minutos. Não compartilhe com ninguém.`;
-  return enviarMensagem(telefone, mensagem);
+  const tpl = await obterTemplate('codigo_verificacao');
+  return enviarMensagem(telefone, aplicar(tpl, { codigo }));
 }
 
 async function enviarConfirmacaoPedido(telefone, pedido) {
   const itens = pedido.itens
     .map((i) => `• ${i.quantidade}x ${i.nome} — R$ ${Number(i.precoUnit).toFixed(2)}`)
     .join('\n');
-
-  const mensagem =
-    `✅ *Pedido Confirmado — PontoBom*\n\n` +
-    `📋 Pedido #${pedido.numero}\n\n` +
-    `${itens}\n\n` +
-    `💰 Total: R$ ${Number(pedido.total).toFixed(2)}\n` +
-    `💳 Pagamento: ${pedido.formaPagamento === 'AVISTA' ? 'À vista na retirada' : 'Online (Asaas)'}\n\n` +
-    `Acompanhe o status do seu pedido pelo site.`;
-
-  return enviarMensagem(telefone, mensagem);
+  const formaPagamento = pedido.formaPagamento === 'AVISTA' ? 'À vista na retirada' : 'Online (Asaas)';
+  const tpl = await obterTemplate('pedido_confirmado');
+  return enviarMensagem(telefone, aplicar(tpl, {
+    numero: pedido.numero,
+    itens,
+    total: Number(pedido.total).toFixed(2),
+    formaPagamento,
+  }));
 }
 
 async function enviarAtualizacaoStatus(telefone, numeroPedido, status, estimativaMin) {
-  const statusTexto = {
-    ACEITO: '✅ Aceito — estamos preparando seu pedido!',
-    EM_PREPARO: '👨‍🍳 Em preparo',
-    PRONTO_PARA_RETIRADA: '🎉 Pronto para retirada! Pode vir buscar.',
-    RECUSADO: '❌ Recusado',
-    FINALIZADO: '✔️ Finalizado',
+  const chaveMap = {
+    ACEITO: 'status_aceito',
+    EM_PREPARO: 'status_em_preparo',
+    PRONTO_PARA_RETIRADA: 'status_pronto',
+    FINALIZADO: 'status_finalizado',
   };
-
-  let mensagem =
-    `📦 *PontoBom — Pedido #${numeroPedido}*\n\n` +
-    `Status: ${statusTexto[status] || status}`;
-
-  if (estimativaMin) {
-    mensagem += `\n⏱️ Tempo estimado: ${estimativaMin} minutos`;
-  }
-
-  return enviarMensagem(telefone, mensagem);
+  const chave = chaveMap[status];
+  if (!chave) return;
+  const tpl = await obterTemplate(chave);
+  return enviarMensagem(telefone, aplicar(tpl, {
+    numero: numeroPedido,
+    estimativa: estimativaMin || null,
+  }));
 }
 
 async function enviarRecusaPedido(telefone, numeroPedido, motivo) {
-  const mensagem =
-    `❌ *PontoBom — Pedido #${numeroPedido} Recusado*\n\n` +
-    `Motivo: ${motivo}\n\n` +
-    `Pedimos desculpas pelo inconveniente. Entre em contato conosco para mais informações.`;
-
-  return enviarMensagem(telefone, mensagem);
+  const tpl = await obterTemplate('pedido_recusado');
+  return enviarMensagem(telefone, aplicar(tpl, { numero: numeroPedido, motivo }));
 }
 
 module.exports = {

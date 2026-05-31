@@ -84,6 +84,7 @@ export default function Cardapio() {
   const [erro, setErro] = useState(null);
   const [itemModal, setItemModal] = useState(null);
   const scrollandoRef = useRef(false);
+  const pillBtnRefs = useRef({});
 
   const { adicionar, totalItens } = useCart();
   const { usuario, logout } = useAuth();
@@ -126,6 +127,12 @@ export default function Cardapio() {
     return () => observer.disconnect();
   }, [secoes]);
 
+  useEffect(() => {
+    if (!secaoAtiva) return;
+    const btn = pillBtnRefs.current[secaoAtiva];
+    if (btn) btn.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' });
+  }, [secaoAtiva]);
+
   function handleLogout() { logout(); navigate('/login'); }
 
   function scrollParaSecao(id) {
@@ -133,7 +140,7 @@ export default function Cardapio() {
     const el = document.getElementById(`secao-${id}`);
     if (!el) return;
     scrollandoRef.current = true;
-    const offset = 90;
+    const offset = 120;
     const top = el.getBoundingClientRect().top + window.scrollY - offset;
     window.scrollTo({ top, behavior: 'smooth' });
     setTimeout(() => { scrollandoRef.current = false; }, 800);
@@ -276,6 +283,7 @@ export default function Cardapio() {
               {secoes.map((s) => (
                 <button
                   key={s.id}
+                  ref={(el) => { pillBtnRefs.current[s.id] = el; }}
                   className={`cd-pill${secaoAtiva === s.id ? ' cd-pill--on' : ''}`}
                   onClick={() => scrollParaSecao(s.id)}
                 >

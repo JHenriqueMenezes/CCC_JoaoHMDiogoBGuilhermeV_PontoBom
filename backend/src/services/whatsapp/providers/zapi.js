@@ -6,8 +6,9 @@ const TOKEN = process.env.ZAPI_TOKEN;
 const CLIENT_TOKEN = process.env.ZAPI_CLIENT_TOKEN;
 const BASE_URL = `https://api.z-api.io/instances/${INSTANCE_ID}/token/${TOKEN}`;
 
+const { obterTemplate, aplicar } = require('../templates');
+
 async function enviarMensagem(telefone, mensagem) {
-  // Z-API espera o número no formato: 5554999999999 (sem + e sem espaços)
   const numeroFormatado = telefone.replace(/\D/g, '');
 
   const headers = { 'Content-Type': 'application/json' };
@@ -16,10 +17,7 @@ async function enviarMensagem(telefone, mensagem) {
   const response = await fetch(`${BASE_URL}/send-text`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({
-      phone: numeroFormatado,
-      message: mensagem,
-    }),
+    body: JSON.stringify({ phone: numeroFormatado, message: mensagem }),
   });
 
   if (!response.ok) {
@@ -31,53 +29,43 @@ async function enviarMensagem(telefone, mensagem) {
 }
 
 async function enviarCodigoVerificacao(telefone, codigo) {
-  const mensagem = `🔐 *PontoBom* — Seu código de verificação é: *${codigo}*\n\nEste código expira em 10 minutos. Não compartilhe com ninguém.`;
-  return enviarMensagem(telefone, mensagem);
+  const tpl = await obterTemplate('codigo_verificacao');
+  return enviarMensagem(telefone, aplicar(tpl, { codigo }));
 }
 
 async function enviarConfirmacaoPedido(telefone, pedido) {
   const itens = pedido.itens
     .map((i) => `• ${i.quantidade}x ${i.nome} — R$ ${Number(i.precoUnit).toFixed(2)}`)
     .join('\n');
-
-  const mensagem =
-    `✅ *Pedido Confirmado — PontoBom*\n\n` +
-    `📋 Pedido #${pedido.numero}\n\n` +
-    `${itens}\n\n` +
-    `💰 Total: R$ ${Number(pedido.total).toFixed(2)}\n` +
-    `💳 Pagamento: ${pedido.formaPagamento === 'AVISTA' ? 'À vista na retirada' : 'Online (Asaas)'}\n\n` +
-    `Acompanhe o status do seu pedido pelo site.`;
-
-  return enviarMensagem(telefone, mensagem);
+  const formaPagamento = pedido.formaPagamento === 'AVISTA' ? 'À vista na retirada' : 'Online (Asaas)';
+  const tpl = await obterTemplate('pedido_confirmado');
+  return enviarMensagem(telefone, aplicar(tpl, {
+    numero: pedido.numero,
+    itens,
+    total: Number(pedido.total).toFixed(2),
+    formaPagamento,
+  }));
 }
 
 async function enviarAtualizacaoStatus(telefone, numeroPedido, status, estimativaMin) {
-  const statusTexto = {
-    ACEITO: '✅ Aceito — estamos preparando seu pedido!',
-    EM_PREPARO: '👨‍🍳 Em preparo',
-    PRONTO_PARA_RETIRADA: '🎉 Pronto para retirada! Pode vir buscar.',
-    RECUSADO: '❌ Recusado',
-    FINALIZADO: '✔️ Finalizado',
+  const chaveMap = {
+    ACEITO: 'status_aceito',
+    EM_PREPARO: 'status_em_preparo',
+    PRONTO_PARA_RETIRADA: 'status_pronto',
+    FINALIZADO: 'status_finalizado',
   };
-
-  let mensagem =
-    `📦 *PontoBom — Pedido #${numeroPedido}*\n\n` +
-    `Status: ${statusTexto[status] || status}`;
-
-  if (estimativaMin) {
-    mensagem += `\n⏱️ Tempo estimado: ${estimativaMin} minutos`;
-  }
-
-  return enviarMensagem(telefone, mensagem);
+  const chave = chaveMap[status];
+  if (!chave) return;
+  const tpl = await obterTemplate(chave);
+  return enviarMensagem(telefone, aplicar(tpl, {
+    numero: numeroPedido,
+    estimativa: estimativaMin || null,
+  }));
 }
 
 async function enviarRecusaPedido(telefone, numeroPedido, motivo) {
-  const mensagem =
-    `❌ *PontoBom — Pedido #${numeroPedido} Recusado*\n\n` +
-    `Motivo: ${motivo}\n\n` +
-    `Pedimos desculpas pelo inconveniente. Entre em contato conosco para mais informações.`;
-
-  return enviarMensagem(telefone, mensagem);
+  const tpl = await obterTemplate('pedido_recusado');
+  return enviarMensagem(telefone, aplicar(tpl, { numero: numeroPedido, motivo }));
 }
 
 module.exports = {

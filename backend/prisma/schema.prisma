@@ -138,3 +138,12 @@ model HistoricoStatus {
 
   @@map("historico_status")
 }
+
+model MensagemTemplate {
+  chave        String   @id
+  template     String
+  descricao    String?
+  atualizadoEm DateTime @updatedAt
+
+  @@map("mensagens_template")
+}

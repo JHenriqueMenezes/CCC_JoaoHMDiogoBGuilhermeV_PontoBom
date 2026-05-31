@@ -13,6 +13,7 @@ const {
   recusarPedido,
   atualizarStatusPedido,
 } = require('../controllers/pedido.controller');
+const { listarMensagens, atualizarMensagem } = require('../controllers/mensagem.controller');
 
 const router = Router();
 
@@ -32,6 +33,10 @@ router.get('/itens', listarItens);
 router.post('/itens', criarItem);
 router.put('/itens/:id', atualizarItem);
 router.delete('/itens/:id', excluirItem);
+
+// ── Mensagens WhatsApp ───────────────────────────────────────────────────────
+router.get('/mensagens', listarMensagens);
+router.put('/mensagens/:chave', atualizarMensagem);
 
 // ── Pedidos — /metrics deve vir antes de /:id ────────────────────────────────
 router.get('/pedidos/metrics', metricas);
