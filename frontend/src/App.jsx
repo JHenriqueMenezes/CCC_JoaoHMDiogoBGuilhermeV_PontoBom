@@ -9,7 +9,9 @@ import Cardapio from './pages/Cardapio';
 import Carrinho from './pages/Carrinho';
 import Checkout from './pages/Checkout';
 import Historico from './pages/Historico';
+import AcompanharPedido from './pages/AcompanharPedido';
 import Admin from './pages/Admin';
+import AdminPedidos from './pages/AdminPedidos';
 
 function RotaAdmin({ children }) {
   const { usuario } = useAuth();
@@ -28,12 +30,16 @@ function App() {
             <Route path="/carrinho" element={<Carrinho />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/historico" element={<Historico />} />
+            <Route path="/pedido/:numero" element={<AcompanharPedido />} />
             <Route path="/login" element={<Login />} />
             <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/verificar" element={<VerificarCodigo />} />
             <Route path="/admin/login" element={<LoginAdmin />} />
             <Route path="/admin" element={
               <RotaAdmin><Admin /></RotaAdmin>
+            } />
+            <Route path="/admin/pedidos" element={
+              <RotaAdmin><AdminPedidos /></RotaAdmin>
             } />
           </Routes>
         </BrowserRouter>

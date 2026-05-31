@@ -32,6 +32,7 @@ function fmtCep(val) {
 // ── Tela de sucesso ────────────────────────────────────────────────────────────
 
 function TelaSucesso({ numero, onVoltar }) {
+  const navigate = useNavigate();
   return (
     <div className="checkout-page checkout-page--sucesso">
       <div className="checkout-sucesso">
@@ -58,6 +59,14 @@ function TelaSucesso({ numero, onVoltar }) {
 
         <button
           className="pb-btn pb-btn--primary pb-btn--block pb-btn--lg"
+          style={{ marginTop: '8px' }}
+          onClick={() => navigate(`/pedido/${numero}`)}
+        >
+          Acompanhar pedido
+        </button>
+
+        <button
+          className="pb-btn pb-btn--ghost pb-btn--block"
           style={{ marginTop: '8px' }}
           onClick={onVoltar}
         >

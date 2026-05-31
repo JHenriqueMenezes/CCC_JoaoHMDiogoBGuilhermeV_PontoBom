@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api, { imgUrl } from '../services/api';
+import SidebarAdmin from '../components/SidebarAdmin';
 
 const fmt = (v) => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
 
@@ -198,50 +199,11 @@ function ModalItem({ item, secoes, onSalvar, onFechar, salvando }) {
 
 // ── Ícones SVG ────────────────────────────────────────────────────────────────
 
-const IcoPedidos = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-    <rect x="9" y="3" width="6" height="4" rx="1"/>
-    <line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/>
-  </svg>
-);
-const IcoCardapio = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
-    <path d="M12 6v6l4 2"/>
-  </svg>
-);
-const IcoSecoes = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-    <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-  </svg>
-);
-const IcoHistorico = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10"/>
-    <polyline points="12 6 12 12 16 14"/>
-  </svg>
-);
-const IcoConfig = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="3"/>
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-  </svg>
-);
 const IcoChevron = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
     <path d="M9 18l6-6-6-6"/>
   </svg>
 );
-
-const NAV_ITEMS = [
-  { id: 'pedidos',    label: 'Pedidos',       ico: <IcoPedidos /> },
-  { id: 'cardapio',  label: 'Cardápio',       ico: <IcoCardapio /> },
-  { id: 'secoes',    label: 'Seções',         ico: <IcoSecoes /> },
-  { id: 'historico', label: 'Histórico',      ico: <IcoHistorico /> },
-  { id: 'config',    label: 'Configurações',  ico: <IcoConfig /> },
-];
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
@@ -494,42 +456,7 @@ export default function Admin() {
     <div className="adm-shell">
 
       {/* ── Sidebar ── */}
-      <aside className="adm-sidebar">
-        {/* Logo */}
-        <div className="adm-sidebar-logo">
-          <div className="pb-logo-mark" style={{ background: 'rgba(255,255,255,0.15)', color: 'var(--pb-mustard-200)' }}>P</div>
-          <span style={{ fontFamily: 'var(--pb-font-display)', fontWeight: 700, fontSize: '18px', color: 'white', letterSpacing: '-0.02em' }}>PontoBom</span>
-        </div>
-
-        {/* Nav */}
-        <nav className="adm-sidebar-nav">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              className={`adm-nav-item${item.id === 'cardapio' ? ' adm-nav-item--on' : ''}`}
-            >
-              {item.ico}
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
-
-        {/* Perfil */}
-        <div className="adm-sidebar-perfil">
-          <div className="adm-perfil-avatar">{(usuario?.nome || 'A')[0].toUpperCase()}</div>
-          <div className="adm-perfil-info">
-            <p className="adm-perfil-nome">{usuario?.nome || 'Administrador'}</p>
-            <p className="adm-perfil-email">{usuario?.email || 'admin@pontobom.com'}</p>
-          </div>
-          <button className="adm-perfil-sair" onClick={handleLogout} title="Sair">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-          </button>
-        </div>
-      </aside>
+      <SidebarAdmin ativo="cardapio" />
 
       {/* ── Layout Desktop: centro + direita ── */}
       <div className="adm-workspace">
