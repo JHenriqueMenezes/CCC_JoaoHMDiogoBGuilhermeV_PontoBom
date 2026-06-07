@@ -470,7 +470,6 @@ a { text-decoration: none; }
   cursor: pointer;
   transition: all 0.15s;
 }
-.cd-pill:hover { background: var(--pb-paper); }
 .cd-pill--on {
   background: var(--pb-terracotta-500);
   border-color: var(--pb-terracotta-500);
@@ -868,6 +867,7 @@ a { text-decoration: none; }
   .cd-aba--on {
     color: var(--pb-terracotta-600);
     border-bottom-color: var(--pb-terracotta-500);
+    font-weight: 700;
   }
 
   /* Seção */

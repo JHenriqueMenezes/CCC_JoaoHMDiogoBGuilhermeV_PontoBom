@@ -233,19 +233,18 @@ export default function Cardapio() {
             <h1 className="cd-hero-titulo">O sabor de casa,<br /><em>direto do forno.</em></h1>
             <p className="cd-hero-sub">Peça online, retire no balcão. Sem fila, sem espera — só o melhor da culinária local.</p>
           </div>
-          <div className="cd-hero-cards">
-            {[
-              { icon: '⭐', val: '4,9', label: 'Avaliação' },
-              { icon: '⏱', val: '~25min', label: 'Tempo médio' },
-              { icon: '📍', val: 'Centro', label: 'Localização' },
-            ].map((c) => (
-              <div key={c.label} className="cd-hero-card">
-                <span className="cd-hero-card-icon">{c.icon}</span>
-                <span className="cd-hero-card-val">{c.val}</span>
-                <span className="cd-hero-card-label">{c.label}</span>
-              </div>
-            ))}
-          </div>
+          <a
+            href="https://maps.app.goo.gl/VY97d24PNc6UasoE8"
+            target="_blank"
+            rel="noreferrer"
+            style={{ textDecoration: 'none' }}
+          >
+            <div className="cd-hero-card" style={{ cursor: 'pointer' }}>
+              <span className="cd-hero-card-icon">📍</span>
+              <span className="cd-hero-card-val">PontoBom</span>
+              <span className="cd-hero-card-label">Ver no mapa</span>
+            </div>
+          </a>
         </div>
       </section>
 
@@ -335,7 +334,7 @@ export default function Cardapio() {
                             ? (
                               <button
                                 className="cd-plus"
-                                onClick={(e) => { e.stopPropagation(); setItemModal({ item, secaoNome: secao.nome, gradIdx: si }); }}
+                                onClick={(e) => { e.stopPropagation(); adicionar(item, 1, ''); }}
                                 aria-label={`Adicionar ${item.nome}`}
                               >
                                 +
