@@ -393,36 +393,36 @@ export default function AdminPedidos() {
           </div>
 
           {/* KPIs */}
-          {metricas && (
-            <div className="kb-kpis">
-              <KpiCard
-                titulo="HOJE"
-                valor={metricas.totalHoje}
-                sub={
-                  metricas.variacaoVsOntem != null
+          <div className="kb-kpis">
+            <KpiCard
+              titulo="HOJE"
+              valor={metricas?.totalHoje ?? '–'}
+              sub={
+                metricas
+                  ? metricas.variacaoVsOntem != null
                     ? `${metricas.variacaoVsOntem >= 0 ? '+' : ''}${metricas.variacaoVsOntem}% vs ontem`
                     : 'primeiro dia'
-                }
-              />
-              <KpiCard
-                titulo="EM PRODUÇÃO"
-                valor={metricas.emProducao}
-                sub="aceitos + em preparo"
-                destaque={metricas.emProducao > 0}
-              />
-              <KpiCard
-                titulo="PRONTO P/ RETIRADA"
-                valor={metricas.prontos}
-                sub="aguardando cliente"
-                destaque={metricas.prontos > 0}
-              />
-              <KpiCard
-                titulo="FATURAMENTO HOJE"
-                valor={`R$ ${Number(metricas.faturamentoHoje).toFixed(2)}`}
-                sub={`${metricas.finalizadosHoje} finalizado${metricas.finalizadosHoje !== 1 ? 's' : ''}`}
-              />
-            </div>
-          )}
+                  : '...'
+              }
+            />
+            <KpiCard
+              titulo="EM PRODUÇÃO"
+              valor={metricas?.emProducao ?? '–'}
+              sub="aceitos + em preparo"
+              destaque={metricas?.emProducao > 0}
+            />
+            <KpiCard
+              titulo="PRONTO P/ RETIRADA"
+              valor={metricas?.prontos ?? '–'}
+              sub="aguardando cliente"
+              destaque={metricas?.prontos > 0}
+            />
+            <KpiCard
+              titulo="FATURAMENTO HOJE"
+              valor={metricas ? `R$ ${Number(metricas.faturamentoHoje).toFixed(2)}` : '–'}
+              sub={metricas ? `${metricas.finalizadosHoje} finalizado${metricas.finalizadosHoje !== 1 ? 's' : ''}` : '...'}
+            />
+          </div>
 
           {/* Kanban */}
           <div className="kb-kanban">
