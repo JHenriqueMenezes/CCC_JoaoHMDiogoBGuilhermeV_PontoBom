@@ -528,7 +528,7 @@ async function historicoAdmin(req, res) {
         criadoEm: p.criadoEm,
         atualizadoEm: p.atualizadoEm,
         cliente: p.usuario ? { nome: p.usuario.nome, telefone: p.usuario.telefone } : null,
-        resumoItens: p.itens.map((i) => ({ nome: i.item?.nome ?? '?', quantidade: i.quantidade })),
+        resumoItens: p.itens.map((i) => ({ nome: i.item?.nome ?? '?', quantidade: i.quantidade, observacao: i.observacao ?? null })),
         motivo: p.historico[0]?.motivo ?? null,
       })),
       total,

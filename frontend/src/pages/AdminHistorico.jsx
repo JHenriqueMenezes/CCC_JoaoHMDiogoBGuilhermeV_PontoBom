@@ -6,6 +6,15 @@ import api from '../services/api';
 
 const fmt = (v) => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
 
+function IcoAlerta() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  );
+}
+
 function fmtDataHora(iso) {
   return new Date(iso).toLocaleString('pt-BR', {
     day: '2-digit', month: '2-digit', year: 'numeric',
@@ -33,42 +42,124 @@ const STATUS_OPCOES = [
   { valor: 'RECUSADO',   label: 'Recusados' },
 ];
 
-// ── Linha expandível ──────────────────────────────────────────────────────────
+// ── Modal detalhe do pedido ───────────────────────────────────────────────────
 
-function LinhaPedido({ p }) {
-  const [expandido, setExpandido] = useState(false);
+function ModalDetalhePedido({ pedido, onFechar }) {
+  const temAlgumObs = pedido.resumoItens.some((i) => i.observacao);
 
   return (
-    <>
-      <div
-        className={`hadm-linha${p.statusAtual === 'RECUSADO' ? ' hadm-linha--recusado' : ''}`}
-        onClick={() => setExpandido((v) => !v)}
-        style={{ cursor: p.motivo ? 'pointer' : 'default' }}
-      >
-        <span className="hadm-numero">#{p.numero}</span>
-        <span className="hadm-cliente">
-          {p.cliente?.nome || p.cliente?.telefone || <em style={{ color: 'var(--pb-ink-300)' }}>—</em>}
-        </span>
-        <span className="hadm-itens" title={p.resumoItens.map((i) => `${i.quantidade}x ${i.nome}`).join(', ')}>
-          {resumo(p.resumoItens)}
-        </span>
-        <span className="hadm-total">{fmt(p.total)}</span>
-        <span className="hadm-pgto">
-          {p.formaPagamento === 'AVISTA' ? 'À vista' : 'Online'}
-        </span>
-        <span className="hadm-data">{fmtDataHora(p.criadoEm)}</span>
-        <span>
-          <span className={`hadm-badge ${p.statusAtual === 'FINALIZADO' ? 'hadm-badge--ok' : 'hadm-badge--recusado'}`}>
-            {p.statusAtual === 'FINALIZADO' ? 'Finalizado' : 'Recusado'}
-          </span>
-        </span>
-      </div>
-      {expandido && p.motivo && (
-        <div className="hadm-motivo">
-          <strong>Motivo da recusa:</strong> {p.motivo}
+    <div className="adm-modal-overlay" onClick={(e) => e.target === e.currentTarget && onFechar()}>
+      <div className="adm-modal" style={{ maxWidth: '480px' }}>
+        <div className="adm-modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <h2 className="adm-modal-titulo">Pedido #{pedido.numero}</h2>
+            <span className={`hadm-badge ${pedido.statusAtual === 'FINALIZADO' ? 'hadm-badge--ok' : 'hadm-badge--recusado'}`}>
+              {pedido.statusAtual === 'FINALIZADO' ? 'Finalizado' : 'Recusado'}
+            </span>
+            {temAlgumObs && (
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: '3px',
+                background: 'var(--pb-warn-bg)', color: 'var(--pb-warn)',
+                fontSize: '11px', fontWeight: 700, padding: '2px 7px',
+                borderRadius: '999px',
+              }}>
+                <IcoAlerta /> Observações
+              </span>
+            )}
+          </div>
+          <button className="adm-modal-close" type="button" onClick={onFechar}>✕</button>
         </div>
-      )}
-    </>
+
+        {/* Itens */}
+        <div style={{ padding: '14px 20px 16px', borderBottom: '1px solid var(--pb-line)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--pb-ink-300)', textTransform: 'uppercase', letterSpacing: '0.07em', margin: 0 }}>
+            Itens do pedido
+          </p>
+          {pedido.resumoItens.map((ip, idx) => (
+            <div key={idx}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px' }}>
+                {ip.observacao && (
+                  <span style={{ color: 'var(--pb-warn)', display: 'flex' }}><IcoAlerta /></span>
+                )}
+                <span style={{ fontWeight: 700, color: 'var(--pb-ink-500)' }}>{ip.quantidade}×</span>
+                <span style={{ color: 'var(--pb-ink-900)' }}>{ip.nome}</span>
+              </div>
+              {ip.observacao && (
+                <p style={{
+                  margin: '5px 0 0 18px', fontSize: '12px', lineHeight: 1.45,
+                  color: 'var(--pb-warn)', background: 'var(--pb-warn-bg)',
+                  borderRadius: '6px', padding: '4px 9px',
+                }}>
+                  {ip.observacao}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Motivo de recusa */}
+        {pedido.motivo && (
+          <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--pb-line)', background: 'var(--pb-danger-bg)' }}>
+            <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--pb-danger)', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 5px' }}>
+              Motivo da recusa
+            </p>
+            <p style={{ fontSize: '13px', color: 'var(--pb-danger)', margin: 0, lineHeight: 1.5 }}>
+              {pedido.motivo}
+            </p>
+          </div>
+        )}
+
+        {/* Rodapé com info */}
+        <div style={{ padding: '12px 20px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '13px', color: 'var(--pb-ink-500)' }}>
+            {pedido.formaPagamento === 'AVISTA' ? 'À vista' : 'Online'} · {fmtDataHora(pedido.criadoEm)}
+          </span>
+          <span style={{ fontFamily: 'var(--pb-font-display)', fontWeight: 700, fontSize: '16px', color: 'var(--pb-ink-900)' }}>
+            {fmt(pedido.total)}
+          </span>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// ── Linha da tabela ───────────────────────────────────────────────────────────
+
+function LinhaPedido({ p, onVerDetalhe }) {
+  const temObs = p.resumoItens.some((i) => i.observacao);
+
+  return (
+    <div
+      className={`hadm-linha${p.statusAtual === 'RECUSADO' ? ' hadm-linha--recusado' : ''}`}
+      onClick={() => onVerDetalhe(p)}
+      style={{ cursor: 'pointer' }}
+    >
+      <span className="hadm-numero" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+        #{p.numero}
+        {temObs && (
+          <span style={{ color: 'var(--pb-warn)', display: 'flex' }} title="Pedido contém observações">
+            <IcoAlerta />
+          </span>
+        )}
+      </span>
+      <span className="hadm-cliente">
+        {p.cliente?.nome || p.cliente?.telefone || <em style={{ color: 'var(--pb-ink-300)' }}>—</em>}
+      </span>
+      <span className="hadm-itens" title={p.resumoItens.map((i) => `${i.quantidade}x ${i.nome}`).join(', ')}>
+        {resumo(p.resumoItens)}
+      </span>
+      <span className="hadm-total">{fmt(p.total)}</span>
+      <span className="hadm-pgto">
+        {p.formaPagamento === 'AVISTA' ? 'À vista' : 'Online'}
+      </span>
+      <span className="hadm-data">{fmtDataHora(p.criadoEm)}</span>
+      <span>
+        <span className={`hadm-badge ${p.statusAtual === 'FINALIZADO' ? 'hadm-badge--ok' : 'hadm-badge--recusado'}`}>
+          {p.statusAtual === 'FINALIZADO' ? 'Finalizado' : 'Recusado'}
+        </span>
+      </span>
+    </div>
   );
 }
 
@@ -83,6 +174,7 @@ export default function AdminHistorico() {
   const [pagina, setPagina]           = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [loading, setLoading]         = useState(true);
+  const [pedidoModal, setPedidoModal] = useState(null);
 
   const [periodo, setPeriodo]   = useState('7d');
   const [status, setStatus]     = useState('');
@@ -168,7 +260,7 @@ export default function AdminHistorico() {
             Nenhum pedido encontrado para os filtros selecionados.
           </p>
         ) : (
-          pedidos.map((p) => <LinhaPedido key={p.id} p={p} />)
+          pedidos.map((p) => <LinhaPedido key={p.id} p={p} onVerDetalhe={setPedidoModal} />)
         )}
       </div>
 
@@ -206,6 +298,10 @@ export default function AdminHistorico() {
         </div>
         <div className="adm-mobile-body">{conteudo}</div>
       </div>
+
+      {pedidoModal && (
+        <ModalDetalhePedido pedido={pedidoModal} onFechar={() => setPedidoModal(null)} />
+      )}
 
     </div>
   );
