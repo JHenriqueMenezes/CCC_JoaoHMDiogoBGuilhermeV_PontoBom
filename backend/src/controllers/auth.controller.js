@@ -5,6 +5,19 @@ const whatsapp = require('../services/whatsapp');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'pontobom_secret';
 
+async function buscarUsuarioPorTelefone(raw) {
+  const d = raw.replace(/\D/g, '');
+  const variantes = new Set([d]);
+  if (d.startsWith('55') && d.length >= 12) variantes.add(d.slice(2));
+  else variantes.add('55' + d);
+
+  for (const tel of variantes) {
+    const u = await prisma.usuario.findUnique({ where: { telefone: tel } });
+    if (u) return { usuario: u, telefone: tel };
+  }
+  return { usuario: null, telefone: d };
+}
+
 function gerarCodigo() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
@@ -17,15 +30,17 @@ function gerarExpiracao() {
 
 // POST /auth/cadastro - Registrar cliente e enviar código WhatsApp
 async function cadastrar(req, res) {
-  const { telefone, nome } = req.body;
+  const { telefone: telefoneRaw, nome } = req.body;
 
-  if (!telefone) {
+  if (!telefoneRaw) {
     return res.status(400).json({ erro: 'Telefone é obrigatório.' });
   }
 
-  let usuario = await prisma.usuario.findUnique({ where: { telefone } });
+  const digits = telefoneRaw.replace(/\D/g, '');
+  let { usuario, telefone } = await buscarUsuarioPorTelefone(digits);
 
   if (!usuario) {
+    telefone = digits;
     usuario = await prisma.usuario.create({
       data: { telefone, nome, role: 'CLIENTE' },
     });
@@ -53,13 +68,13 @@ async function cadastrar(req, res) {
 
 // POST /auth/verificar - Verificar código e autenticar cliente
 async function verificar(req, res) {
-  const { telefone, codigo } = req.body;
+  const { telefone: telefoneRaw, codigo } = req.body;
 
-  if (!telefone || !codigo) {
+  if (!telefoneRaw || !codigo) {
     return res.status(400).json({ erro: 'Telefone e código são obrigatórios.' });
   }
 
-  const usuario = await prisma.usuario.findUnique({ where: { telefone } });
+  const { usuario } = await buscarUsuarioPorTelefone(telefoneRaw);
   if (!usuario) {
     return res.status(404).json({ erro: 'Usuário não encontrado.' });
   }
@@ -122,13 +137,13 @@ async function loginAdmin(req, res) {
 
 // POST /auth/login - Login de cliente existente via WhatsApp
 async function loginCliente(req, res) {
-  const { telefone } = req.body;
+  const { telefone: telefoneRaw } = req.body;
 
-  if (!telefone) {
+  if (!telefoneRaw) {
     return res.status(400).json({ erro: 'Telefone é obrigatório.' });
   }
 
-  const usuario = await prisma.usuario.findUnique({ where: { telefone } });
+  const { usuario, telefone } = await buscarUsuarioPorTelefone(telefoneRaw);
 
   if (!usuario) {
     return res.status(404).json({ erro: 'Nenhuma conta encontrada com esse número. Faça o cadastro primeiro.' });

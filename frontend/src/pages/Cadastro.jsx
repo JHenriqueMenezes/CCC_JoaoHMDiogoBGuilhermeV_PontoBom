@@ -2,6 +2,13 @@ import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import api from '../services/api';
 
+function fmtTelefone(val) {
+  const d = val.replace(/\D/g, '').slice(0, 11);
+  if (d.length <= 2) return d.length ? `(${d}` : '';
+  if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+
 function Logo() {
   return (
     <span className="pb-logo">
@@ -25,7 +32,7 @@ export default function Cadastro() {
     setErro('');
     setCarregando(true);
     try {
-      await api.post('/auth/cadastro', { nome, telefone });
+      await api.post('/auth/cadastro', { nome, telefone: telefone.replace(/\D/g, '') });
       navigate('/verificar', { state: { telefone, redirectTo } });
     } catch (err) {
       setErro(err.response?.data?.erro || 'Erro ao enviar código.');
@@ -73,7 +80,8 @@ export default function Cadastro() {
               className="pb-input auth-phone-input"
               placeholder="(54) 99999-9999"
               value={telefone}
-              onChange={(e) => setTelefone(e.target.value)}
+              onChange={(e) => setTelefone(fmtTelefone(e.target.value))}
+              inputMode="numeric"
               required
             />
           </div>
