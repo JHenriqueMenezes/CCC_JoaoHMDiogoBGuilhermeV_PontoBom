@@ -32,10 +32,23 @@ function fmtDia() {
 }
 
 
+// ── Ícone de alerta ───────────────────────────────────────────────────────────
+
+function IcoAlerta() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  );
+}
+
 // ── Modal Aceitar ─────────────────────────────────────────────────────────────
 
 function ModalAceitar({ pedido, onConfirmar, onFechar, salvando }) {
   const [estimativa, setEstimativa] = useState('25');
+  const itens = pedido.itens ?? [];
+  const temAlgumObs = itens.some((ip) => ip.observacao);
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -44,14 +57,54 @@ function ModalAceitar({ pedido, onConfirmar, onFechar, salvando }) {
 
   return (
     <div className="adm-modal-overlay" onClick={(e) => e.target === e.currentTarget && onFechar()}>
-      <div className="adm-modal">
+      <div className="adm-modal" style={{ maxWidth: '480px' }}>
         <div className="adm-modal-header">
-          <h2 className="adm-modal-titulo">Aceitar #{pedido.numero}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 className="adm-modal-titulo">Aceitar #{pedido.numero}</h2>
+            {temAlgumObs && (
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: '3px',
+                background: 'var(--pb-warn-bg)', color: 'var(--pb-warn)',
+                fontSize: '11px', fontWeight: 700, padding: '2px 7px',
+                borderRadius: '999px',
+              }}>
+                <IcoAlerta /> Observações
+              </span>
+            )}
+          </div>
           <button className="adm-modal-close" type="button" onClick={onFechar}>✕</button>
         </div>
+
+        {/* Lista de itens */}
+        <div style={{ padding: '14px 20px 16px', borderBottom: '1px solid var(--pb-line)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--pb-ink-300)', textTransform: 'uppercase', letterSpacing: '0.07em', margin: 0 }}>
+            Itens do pedido
+          </p>
+          {itens.map((ip, idx) => (
+            <div key={ip.id ?? idx}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px' }}>
+                {ip.observacao && (
+                  <span style={{ color: 'var(--pb-warn)', display: 'flex' }}><IcoAlerta /></span>
+                )}
+                <span style={{ fontWeight: 700, color: 'var(--pb-ink-500)' }}>{ip.quantidade}×</span>
+                <span style={{ color: 'var(--pb-ink-900)' }}>{ip.nome}</span>
+              </div>
+              {ip.observacao && (
+                <p style={{
+                  margin: '5px 0 0 18px', fontSize: '12px', lineHeight: 1.45,
+                  color: 'var(--pb-warn)', background: 'var(--pb-warn-bg)',
+                  borderRadius: '6px', padding: '4px 9px',
+                }}>
+                  {ip.observacao}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+
         <form onSubmit={handleSubmit}>
           <div className="adm-modal-body">
-            <p style={{ fontSize: '14px', color: 'var(--pb-ink-500)', marginBottom: '16px', margin: '0 0 16px' }}>
+            <p style={{ fontSize: '14px', color: 'var(--pb-ink-500)', margin: '0 0 16px' }}>
               Informe o tempo estimado para o cliente retirar o pedido.
             </p>
             <div className="adm-form-row">
@@ -137,17 +190,32 @@ function ModalRecusar({ pedido, onConfirmar, onFechar, salvando }) {
 function PedidoCard({ pedido, coluna, onAceitar, onRecusar, onAvancar }) {
   const aceitoHist = (pedido.historico ?? []).find((h) => h.status === 'ACEITO');
   const horarioRetirada = fmtHoraRetirada(aceitoHist, pedido.estimativaMin);
+  const temObs = (pedido.itens ?? []).some((ip) => ip.observacao);
 
   const ehNovo =
     coluna === 'recebidos' &&
     Date.now() - new Date(pedido.criadoEm) < 3 * 60 * 1000;
 
   return (
-    <div className="kb-card">
+    <div
+      className="kb-card"
+      onClick={coluna === 'recebidos' ? () => onAceitar(pedido) : undefined}
+      style={coluna === 'recebidos' ? { cursor: 'pointer' } : undefined}
+    >
       <div className="kb-card-top">
         <div className="kb-card-id">
           <span className="kb-card-numero">#{pedido.numero}</span>
           {ehNovo && <span className="kb-badge-novo">Novo</span>}
+          {temObs && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '3px',
+              background: 'var(--pb-warn-bg)', color: 'var(--pb-warn)',
+              fontSize: '10px', fontWeight: 700, padding: '2px 6px',
+              borderRadius: '999px',
+            }} title="Pedido contém observações">
+              <IcoAlerta /> obs.
+            </span>
+          )}
         </div>
         <span className="kb-card-tempo">
           {coluna === 'preparo' && horarioRetirada
@@ -160,7 +228,8 @@ function PedidoCard({ pedido, coluna, onAceitar, onRecusar, onAvancar }) {
 
       <div className="kb-card-itens">
         {(pedido.itens ?? []).slice(0, 3).map((ip, idx) => (
-          <span key={ip.id ?? idx} className="kb-card-item-linha">
+          <span key={ip.id ?? idx} className="kb-card-item-linha" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            {ip.observacao && <span style={{ color: 'var(--pb-warn)', display: 'flex' }}><IcoAlerta /></span>}
             {ip.quantidade}× {ip.nome}
           </span>
         ))}
@@ -174,7 +243,7 @@ function PedidoCard({ pedido, coluna, onAceitar, onRecusar, onAvancar }) {
         {coluna === 'pronto' && <span className="kb-wpp-ok">WhatsApp ✓</span>}
       </div>
 
-      <div className="kb-card-acoes">
+      <div className="kb-card-acoes" onClick={(e) => e.stopPropagation()}>
         {coluna === 'recebidos' && (
           <>
             <button className="kb-btn-recusar" onClick={() => onRecusar(pedido)}>
@@ -451,20 +520,37 @@ export default function AdminPedidos() {
               Nenhum pedido ativo no momento
             </p>
           ) : (
-            [...recebidos, ...emPreparo, ...prontos].map((p) => (
-              <div key={p.id} className="adm-mobile-item-row" style={{ flexDirection: 'column', gap: '10px', alignItems: 'stretch' }}>
+            [...recebidos, ...emPreparo, ...prontos].map((p) => {
+              const temObsMobile = (p.itens ?? []).some((ip) => ip.observacao);
+              return (
+              <div
+                key={p.id}
+                className="adm-mobile-item-row"
+                style={{ flexDirection: 'column', gap: '10px', alignItems: 'stretch', cursor: p.statusAtual === 'RECEBIDO' ? 'pointer' : undefined }}
+                onClick={p.statusAtual === 'RECEBIDO' ? () => setModal({ tipo: 'aceitar', pedido: p }) : undefined}
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     <span style={{ fontWeight: 700 }}>#{p.numero}</span>
-                    <span style={{ fontSize: '12px', color: 'var(--pb-ink-300)', marginLeft: '8px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--pb-ink-300)' }}>
                       {p.statusAtual.replace(/_/g, ' ')}
                     </span>
+                    {temObsMobile && (
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '3px',
+                        background: 'var(--pb-warn-bg)', color: 'var(--pb-warn)',
+                        fontSize: '10px', fontWeight: 700, padding: '2px 6px',
+                        borderRadius: '999px',
+                      }}>
+                        <IcoAlerta /> obs.
+                      </span>
+                    )}
                   </div>
                   <span style={{ fontFamily: 'var(--pb-font-display)', fontWeight: 700, color: 'var(--pb-terracotta-600)' }}>
                     {fmt(p.total)}
                   </span>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }} onClick={(e) => e.stopPropagation()}>
                   {p.statusAtual === 'RECEBIDO' && (
                     <>
                       <button className="adm-btn-sm adm-btn-sm--danger" onClick={() => setModal({ tipo: 'recusar', pedido: p })}>Recusar</button>
@@ -483,7 +569,8 @@ export default function AdminPedidos() {
                   )}
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
