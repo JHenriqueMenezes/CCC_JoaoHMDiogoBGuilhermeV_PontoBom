@@ -1,32 +1,4 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const prisma = require('../lib/prisma');
-const whatsapp = require('../services/whatsapp');
-
-const JWT_SECRET = process.env.JWT_SECRET || 'pontobom_secret';
-
-async function buscarUsuarioPorTelefone(raw) {
-  const d = raw.replace(/\D/g, '');
-  const variantes = new Set([d]);
-  if (d.startsWith('55') && d.length >= 12) variantes.add(d.slice(2));
-  else variantes.add('55' + d);
-
-  for (const tel of variantes) {
-    const u = await prisma.usuario.findUnique({ where: { telefone: tel } });
-    if (u) return { usuario: u, telefone: tel };
-  }
-  return { usuario: null, telefone: d };
-}
-
-function gerarCodigo() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-function gerarExpiracao() {
-  const expira = new Date();
-  expira.setMinutes(expira.getMinutes() + 10);
-  return expira;
-}
+const authService = require('../services/auth.service');
 
 // POST /auth/cadastro - Registrar cliente e enviar código WhatsApp
 async function cadastrar(req, res) {
@@ -36,34 +8,12 @@ async function cadastrar(req, res) {
     return res.status(400).json({ erro: 'Telefone é obrigatório.' });
   }
 
-  const digits = telefoneRaw.replace(/\D/g, '');
-  let { usuario, telefone } = await buscarUsuarioPorTelefone(digits);
-
-  if (!usuario) {
-    telefone = digits;
-    usuario = await prisma.usuario.create({
-      data: { telefone, nome, role: 'CLIENTE' },
-    });
-  }
-
-  const codigo = gerarCodigo();
-  await prisma.codigoVerificacao.create({
-    data: {
-      usuarioId: usuario.id,
-      codigo,
-      expiraEm: gerarExpiracao(),
-    },
-  });
-
   try {
-    await whatsapp.enviarCodigoVerificacao(telefone, codigo);
+    const resultado = await authService.enviarCodigoParaUsuario(telefoneRaw, nome);
+    res.json({ mensagem: resultado.mensagem, telefone: resultado.telefone });
   } catch (err) {
-    // Fallback: se o WhatsApp falhar, mostra no console para não travar o fluxo
-    console.warn(`⚠️  WhatsApp falhou para ${telefone}. Código: ${codigo}`);
-    console.warn(err.message);
+    res.status(err.status || 500).json({ erro: err.message });
   }
-
-  res.json({ mensagem: 'Código enviado via WhatsApp.', telefone });
 }
 
 // POST /auth/verificar - Verificar código e autenticar cliente
@@ -74,37 +24,12 @@ async function verificar(req, res) {
     return res.status(400).json({ erro: 'Telefone e código são obrigatórios.' });
   }
 
-  const { usuario } = await buscarUsuarioPorTelefone(telefoneRaw);
-  if (!usuario) {
-    return res.status(404).json({ erro: 'Usuário não encontrado.' });
+  try {
+    const resultado = await authService.verificarCodigo(telefoneRaw, codigo);
+    res.json(resultado);
+  } catch (err) {
+    res.status(err.status || 500).json({ erro: err.message });
   }
-
-  const registro = await prisma.codigoVerificacao.findFirst({
-    where: {
-      usuarioId: usuario.id,
-      codigo,
-      usado: false,
-      expiraEm: { gt: new Date() },
-    },
-    orderBy: { criadoEm: 'desc' },
-  });
-
-  if (!registro) {
-    return res.status(400).json({ erro: 'Código inválido ou expirado.' });
-  }
-
-  await prisma.codigoVerificacao.update({
-    where: { id: registro.id },
-    data: { usado: true },
-  });
-
-  const token = jwt.sign(
-    { id: usuario.id, role: usuario.role },
-    JWT_SECRET,
-    { expiresIn: '7d' }
-  );
-
-  res.json({ token, usuario: { id: usuario.id, nome: usuario.nome, telefone: usuario.telefone, role: usuario.role } });
 }
 
 // POST /auth/login - Login do administrador com usuário e senha
@@ -115,24 +40,12 @@ async function loginAdmin(req, res) {
     return res.status(400).json({ erro: 'Email e senha são obrigatórios.' });
   }
 
-  const usuario = await prisma.usuario.findUnique({ where: { email } });
-
-  if (!usuario || usuario.role !== 'ADMIN' || !usuario.ativo) {
-    return res.status(401).json({ erro: 'Credenciais inválidas.' });
+  try {
+    const resultado = await authService.loginAdmin(email, senha);
+    res.json(resultado);
+  } catch (err) {
+    res.status(err.status || 500).json({ erro: err.message });
   }
-
-  const senhaValida = await bcrypt.compare(senha, usuario.senha);
-  if (!senhaValida) {
-    return res.status(401).json({ erro: 'Credenciais inválidas.' });
-  }
-
-  const token = jwt.sign(
-    { id: usuario.id, role: usuario.role },
-    JWT_SECRET,
-    { expiresIn: '1d' }
-  );
-
-  res.json({ token, usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, role: usuario.role } });
 }
 
 // POST /auth/login - Login de cliente existente via WhatsApp
@@ -143,29 +56,12 @@ async function loginCliente(req, res) {
     return res.status(400).json({ erro: 'Telefone é obrigatório.' });
   }
 
-  const { usuario, telefone } = await buscarUsuarioPorTelefone(telefoneRaw);
-
-  if (!usuario) {
-    return res.status(404).json({ erro: 'Nenhuma conta encontrada com esse número. Faça o cadastro primeiro.' });
-  }
-
-  const codigo = gerarCodigo();
-  await prisma.codigoVerificacao.create({
-    data: {
-      usuarioId: usuario.id,
-      codigo,
-      expiraEm: gerarExpiracao(),
-    },
-  });
-
   try {
-    await whatsapp.enviarCodigoVerificacao(telefone, codigo);
+    const resultado = await authService.enviarCodigoLogin(telefoneRaw);
+    res.json({ mensagem: resultado.mensagem, telefone: resultado.telefone });
   } catch (err) {
-    console.warn(`⚠️  WhatsApp falhou para ${telefone}. Código: ${codigo}`);
-    console.warn(err.message);
+    res.status(err.status || 500).json({ erro: err.message });
   }
-
-  res.json({ mensagem: 'Código enviado via WhatsApp.', telefone });
 }
 
 module.exports = { cadastrar, verificar, loginAdmin, loginCliente };

@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'pontobom_secret';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('JWT_SECRET não definido nas variáveis de ambiente.');
 
 function autenticar(req, res, next) {
   const authHeader = req.headers.authorization;
