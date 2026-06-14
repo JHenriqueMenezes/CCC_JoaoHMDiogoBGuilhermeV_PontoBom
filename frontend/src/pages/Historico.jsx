@@ -143,14 +143,12 @@ export default function Historico() {
 
                 <div className="hst-card-bottom">
                   <span className={`pb-badge ${badge.cls}`}>{badge.label}</span>
-                  {emAndamento && (
-                    <button
-                      className="hst-acompanhar"
-                      onClick={() => navigate(`/pedido/${p.numero}`)}
-                    >
-                      Acompanhar →
-                    </button>
-                  )}
+                  <button
+                    className="hst-acompanhar"
+                    onClick={() => navigate(`/pedido/${p.numero}`)}
+                  >
+                    {emAndamento ? 'Acompanhar →' : 'Ver detalhes →'}
+                  </button>
                 </div>
               </div>
             );

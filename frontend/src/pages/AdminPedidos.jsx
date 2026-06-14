@@ -372,13 +372,17 @@ export default function AdminPedidos() {
   const [processando, setProcessando] = useState(new Set());
   const [ultimaAtt, setUltimaAtt] = useState(null);
   const intervalRef = useRef(null);
+  const buscarSeqRef = useRef(0);
 
   const buscar = useCallback(async () => {
+    const seq = ++buscarSeqRef.current;
     try {
       const [rP, rM] = await Promise.all([
         api.get('/admin/pedidos'),
         api.get('/admin/pedidos/metrics'),
       ]);
+      // Ignora respostas de requisições antigas que chegaram fora de ordem
+      if (seq !== buscarSeqRef.current) return;
       setPedidos(rP.data.pedidos);
       setMetricas(rM.data);
       setUltimaAtt(new Date());
