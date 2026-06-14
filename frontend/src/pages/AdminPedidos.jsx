@@ -43,6 +43,38 @@ function IcoAlerta() {
   );
 }
 
+// ── Lista de itens (com observações) ─────────────────────────────────────────
+
+function ListaItensPedido({ itens }) {
+  return (
+    <div style={{ padding: '14px 20px 16px', borderBottom: '1px solid var(--pb-line)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--pb-ink-300)', textTransform: 'uppercase', letterSpacing: '0.07em', margin: 0 }}>
+        Itens do pedido
+      </p>
+      {itens.map((ip, idx) => (
+        <div key={ip.id ?? idx}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px' }}>
+            {ip.observacao && (
+              <span style={{ color: 'var(--pb-warn)', display: 'flex' }}><IcoAlerta /></span>
+            )}
+            <span style={{ fontWeight: 700, color: 'var(--pb-ink-500)' }}>{ip.quantidade}×</span>
+            <span style={{ color: 'var(--pb-ink-900)' }}>{ip.nome}</span>
+          </div>
+          {ip.observacao && (
+            <p style={{
+              margin: '5px 0 0 18px', fontSize: '12px', lineHeight: 1.45,
+              color: 'var(--pb-warn)', background: 'var(--pb-warn-bg)',
+              borderRadius: '6px', padding: '4px 9px',
+            }}>
+              {ip.observacao}
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Modal Aceitar ─────────────────────────────────────────────────────────────
 
 function ModalAceitar({ pedido, onConfirmar, onFechar, salvando }) {
@@ -75,32 +107,7 @@ function ModalAceitar({ pedido, onConfirmar, onFechar, salvando }) {
           <button className="adm-modal-close" type="button" onClick={onFechar}>✕</button>
         </div>
 
-        {/* Lista de itens */}
-        <div style={{ padding: '14px 20px 16px', borderBottom: '1px solid var(--pb-line)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--pb-ink-300)', textTransform: 'uppercase', letterSpacing: '0.07em', margin: 0 }}>
-            Itens do pedido
-          </p>
-          {itens.map((ip, idx) => (
-            <div key={ip.id ?? idx}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px' }}>
-                {ip.observacao && (
-                  <span style={{ color: 'var(--pb-warn)', display: 'flex' }}><IcoAlerta /></span>
-                )}
-                <span style={{ fontWeight: 700, color: 'var(--pb-ink-500)' }}>{ip.quantidade}×</span>
-                <span style={{ color: 'var(--pb-ink-900)' }}>{ip.nome}</span>
-              </div>
-              {ip.observacao && (
-                <p style={{
-                  margin: '5px 0 0 18px', fontSize: '12px', lineHeight: 1.45,
-                  color: 'var(--pb-warn)', background: 'var(--pb-warn-bg)',
-                  borderRadius: '6px', padding: '4px 9px',
-                }}>
-                  {ip.observacao}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
+        <ListaItensPedido itens={itens} />
 
         <form onSubmit={handleSubmit}>
           <div className="adm-modal-body">
@@ -185,9 +192,68 @@ function ModalRecusar({ pedido, onConfirmar, onFechar, salvando }) {
   );
 }
 
+// ── Modal Detalhes (visualização — pedidos em preparo) ────────────────────────
+
+const PROXIMO_LABEL = {
+  ACEITO: 'Iniciar preparo →',
+  EM_PREPARO: 'Marcar como pronto →',
+  PRONTO_PARA_RETIRADA: 'Cliente retirou ✓',
+};
+
+function ModalDetalhesPedido({ pedido, onFechar, onAvancar, processando }) {
+  const itens = pedido.itens ?? [];
+  const temAlgumObs = itens.some((ip) => ip.observacao);
+  const proximoLabel = PROXIMO_LABEL[pedido.statusAtual];
+
+  return (
+    <div className="adm-modal-overlay" onClick={(e) => e.target === e.currentTarget && onFechar()}>
+      <div className="adm-modal" style={{ maxWidth: '480px' }}>
+        <div className="adm-modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 className="adm-modal-titulo">Pedido #{pedido.numero}</h2>
+            {temAlgumObs && (
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: '3px',
+                background: 'var(--pb-warn-bg)', color: 'var(--pb-warn)',
+                fontSize: '11px', fontWeight: 700, padding: '2px 7px',
+                borderRadius: '999px',
+              }}>
+                <IcoAlerta /> Observações
+              </span>
+            )}
+          </div>
+          <button className="adm-modal-close" type="button" onClick={onFechar}>✕</button>
+        </div>
+
+        <div style={{ padding: '14px 20px 0' }}>
+          <p style={{ fontSize: '14px', color: 'var(--pb-ink-500)', margin: 0 }}>
+            Cliente: <strong style={{ color: 'var(--pb-ink-900)' }}>{pedido.usuario?.nome || 'Cliente'}</strong>
+          </p>
+        </div>
+
+        <ListaItensPedido itens={itens} />
+
+        <div className="adm-modal-footer">
+          <button type="button" className="pb-btn pb-btn--ghost" onClick={onFechar}>Fechar</button>
+          {proximoLabel && (
+            <button
+              type="button"
+              className="pb-btn pb-btn--primary"
+              disabled={processando}
+              onClick={() => { onAvancar(pedido); onFechar(); }}
+            >
+              {processando ? 'Atualizando…' : proximoLabel}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Card de Pedido ────────────────────────────────────────────────────────────
 
-function PedidoCard({ pedido, coluna, onAceitar, onRecusar, onAvancar, processando }) {
+function PedidoCard({ pedido, coluna, onAceitar, onRecusar, onAvancar, onVerDetalhes, processando }) {
   const aceitoHist = (pedido.historico ?? []).find((h) => h.status === 'ACEITO');
   const horarioRetirada = fmtHoraRetirada(aceitoHist, pedido.estimativaMin);
   const temObs = (pedido.itens ?? []).some((ip) => ip.observacao);
@@ -199,8 +265,12 @@ function PedidoCard({ pedido, coluna, onAceitar, onRecusar, onAvancar, processan
   return (
     <div
       className="kb-card"
-      onClick={coluna === 'recebidos' ? () => onAceitar(pedido) : undefined}
-      style={coluna === 'recebidos' ? { cursor: 'pointer' } : undefined}
+      onClick={
+        coluna === 'recebidos' ? () => onAceitar(pedido)
+        : coluna === 'preparo' ? () => onVerDetalhes(pedido)
+        : undefined
+      }
+      style={(coluna === 'recebidos' || coluna === 'preparo') ? { cursor: 'pointer' } : undefined}
     >
       <div className="kb-card-top">
         <div className="kb-card-id">
@@ -486,6 +556,7 @@ export default function AdminPedidos() {
                       onAceitar={() => {}}
                       onRecusar={() => {}}
                       onAvancar={avancarStatus}
+                      onVerDetalhes={(ped) => setModal({ tipo: 'detalhes', pedido: ped })}
                       processando={processando.has(p.id)}
                     />
                   ))
@@ -620,6 +691,14 @@ export default function AdminPedidos() {
           pedido={modal.pedido}
           salvando={salvando}
           onConfirmar={confirmarRecusar}
+          onFechar={() => setModal(null)}
+        />
+      )}
+      {modal?.tipo === 'detalhes' && (
+        <ModalDetalhesPedido
+          pedido={modal.pedido}
+          processando={processando.has(modal.pedido.id)}
+          onAvancar={avancarStatus}
           onFechar={() => setModal(null)}
         />
       )}
