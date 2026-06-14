@@ -1,6 +1,15 @@
 const prisma = require('../lib/prisma');
 
+const ASAAS_WEBHOOK_TOKEN = process.env.ASAAS_WEBHOOK_TOKEN;
+if (!ASAAS_WEBHOOK_TOKEN) {
+  console.warn('⚠️  ASAAS_WEBHOOK_TOKEN não definido — webhook do Asaas aceitará requisições sem validação de token.');
+}
+
 async function asaasWebhook(req, res) {
+  if (ASAAS_WEBHOOK_TOKEN && req.headers['asaas-access-token'] !== ASAAS_WEBHOOK_TOKEN) {
+    return res.status(401).json({ erro: 'Token inválido.' });
+  }
+
   // Always respond 200 quickly so Asaas doesn't retry
   res.status(200).json({ ok: true });
 
