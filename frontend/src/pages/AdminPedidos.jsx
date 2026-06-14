@@ -187,7 +187,7 @@ function ModalRecusar({ pedido, onConfirmar, onFechar, salvando }) {
 
 // ── Card de Pedido ────────────────────────────────────────────────────────────
 
-function PedidoCard({ pedido, coluna, onAceitar, onRecusar, onAvancar }) {
+function PedidoCard({ pedido, coluna, onAceitar, onRecusar, onAvancar, processando }) {
   const aceitoHist = (pedido.historico ?? []).find((h) => h.status === 'ACEITO');
   const horarioRetirada = fmtHoraRetirada(aceitoHist, pedido.estimativaMin);
   const temObs = (pedido.itens ?? []).some((ip) => ip.observacao);
@@ -255,16 +255,21 @@ function PedidoCard({ pedido, coluna, onAceitar, onRecusar, onAvancar }) {
           </>
         )}
         {coluna === 'preparo' && (
-          <button className="kb-btn-avancar kb-btn-avancar--full" onClick={() => onAvancar(pedido)}>
-            {pedido.statusAtual === 'ACEITO' ? 'Iniciar preparo →' : 'Marcar como pronto →'}
+          <button
+            className="kb-btn-avancar kb-btn-avancar--full"
+            onClick={() => onAvancar(pedido)}
+            disabled={processando}
+          >
+            {processando ? 'Atualizando…' : (pedido.statusAtual === 'ACEITO' ? 'Iniciar preparo →' : 'Marcar como pronto →')}
           </button>
         )}
         {coluna === 'pronto' && (
           <button
             className="kb-btn-avancar kb-btn-avancar--full kb-btn-avancar--finalizar"
             onClick={() => onAvancar(pedido)}
+            disabled={processando}
           >
-            Cliente retirou ✓
+            {processando ? 'Atualizando…' : 'Cliente retirou ✓'}
           </button>
         )}
       </div>
@@ -294,6 +299,7 @@ export default function AdminPedidos() {
   const [metricas, setMetricas] = useState(null);
   const [modal, setModal] = useState(null);
   const [salvando, setSalvando] = useState(false);
+  const [processando, setProcessando] = useState(new Set());
   const [ultimaAtt, setUltimaAtt] = useState(null);
   const intervalRef = useRef(null);
 
@@ -352,11 +358,24 @@ export default function AdminPedidos() {
       PRONTO_PARA_RETIRADA: 'FINALIZADO',
     }[pedido.statusAtual];
     if (!proximo) return;
+
+    setProcessando((s) => new Set(s).add(pedido.id));
+    setPedidos((prev) =>
+      prev.map((p) => (p.id === pedido.id ? { ...p, statusAtual: proximo } : p))
+    );
+
     try {
       await api.patch(`/admin/pedidos/${pedido.id}/status`, { status: proximo });
-      await buscar();
+      buscar();
     } catch (e) {
       alert(e.response?.data?.erro || 'Erro ao atualizar status.');
+      buscar();
+    } finally {
+      setProcessando((s) => {
+        const n = new Set(s);
+        n.delete(pedido.id);
+        return n;
+      });
     }
   }
 
@@ -467,6 +486,7 @@ export default function AdminPedidos() {
                       onAceitar={() => {}}
                       onRecusar={() => {}}
                       onAvancar={avancarStatus}
+                      processando={processando.has(p.id)}
                     />
                   ))
                 }
@@ -490,6 +510,7 @@ export default function AdminPedidos() {
                       onAceitar={() => {}}
                       onRecusar={() => {}}
                       onAvancar={avancarStatus}
+                      processando={processando.has(p.id)}
                     />
                   ))
                 }
@@ -558,13 +579,23 @@ export default function AdminPedidos() {
                     </>
                   )}
                   {['ACEITO', 'EM_PREPARO'].includes(p.statusAtual) && (
-                    <button className="pb-btn pb-btn--primary" style={{ fontSize: '12px', padding: '6px 14px' }} onClick={() => avancarStatus(p)}>
-                      {p.statusAtual === 'ACEITO' ? 'Iniciar preparo' : 'Marcar como pronto'}
+                    <button
+                      className="pb-btn pb-btn--primary"
+                      style={{ fontSize: '12px', padding: '6px 14px' }}
+                      onClick={() => avancarStatus(p)}
+                      disabled={processando.has(p.id)}
+                    >
+                      {processando.has(p.id) ? 'Atualizando…' : (p.statusAtual === 'ACEITO' ? 'Iniciar preparo' : 'Marcar como pronto')}
                     </button>
                   )}
                   {p.statusAtual === 'PRONTO_PARA_RETIRADA' && (
-                    <button className="pb-btn pb-btn--primary" style={{ fontSize: '12px', padding: '6px 14px' }} onClick={() => avancarStatus(p)}>
-                      Cliente retirou ✓
+                    <button
+                      className="pb-btn pb-btn--primary"
+                      style={{ fontSize: '12px', padding: '6px 14px' }}
+                      onClick={() => avancarStatus(p)}
+                      disabled={processando.has(p.id)}
+                    >
+                      {processando.has(p.id) ? 'Atualizando…' : 'Cliente retirou ✓'}
                     </button>
                   )}
                 </div>
