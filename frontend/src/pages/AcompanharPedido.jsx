@@ -104,7 +104,7 @@ export default function AcompanharPedido() {
     : STATUS_ORDEM;
 
   // Número de telefone da loja — ajustar conforme necessário
-  const telLoja = '5554999999999';
+  const telLoja = '5554968202236';
 
   return (
     <div className="acp-page">
