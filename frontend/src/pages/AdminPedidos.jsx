@@ -437,6 +437,8 @@ export default function AdminPedidos() {
     setPedidos((prev) =>
       prev.map((p) => (p.id === pedido.id ? { ...p, statusAtual: proximo } : p))
     );
+    // Invalida GETs em voo do polling para evitar que dado stale sobrescreva o update otimista
+    buscarSeqRef.current++;
 
     try {
       await api.patch(`/admin/pedidos/${pedido.id}/status`, { status: proximo });
